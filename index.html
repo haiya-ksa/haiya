@@ -74,7 +74,7 @@
         
         /* Custom logo size */
         .logo-img {
-            height: 35px;
+            height: 25px;
             width: auto;
         }
     </style>
@@ -277,25 +277,38 @@
                     <p id="booking-details" class="text-gray-700">الرياضة: <span id="booking-sport"></span> | المدينة: <span id="booking-city"></span> | التاريخ: <span id="booking-date"></span> | الوقت: <span id="booking-time"></span></p>
                 </div>
                 
-                <form id="booking-form" class="space-y-6">
+                <form id="booking-form" action="https://formsubmit.co/haiya.saudi@gmail.com" method="POST" class="space-y-6">
+                    <!-- FormSubmit Hidden Fields -->
+                    <input type="hidden" name="_subject" value="حجز جديد - هيّا">
+                    <input type="hidden" name="_template" value="table">
+                    <input type="hidden" name="_next" value="https://yourgithubusername.github.io/your-repo/thanks.html">
+                    <input type="hidden" name="_captcha" value="false">
+                    
+                    <!-- Hidden Fields for Booking Details -->
+                    <input type="hidden" name="الرياضة" id="hidden-sport">
+                    <input type="hidden" name="المدينة" id="hidden-city">
+                    <input type="hidden" name="التاريخ" id="hidden-date">
+                    <input type="hidden" name="الوقت" id="hidden-time">
+                    <input type="hidden" name="السعر" id="hidden-price">
+                    
                     <div>
                         <label for="full-name" class="block text-lg font-medium mb-2">الاسم الكامل</label>
-                        <input type="text" id="full-name" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent" required>
+                        <input type="text" id="full-name" name="الاسم الكامل" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent" required>
                     </div>
                     
                     <div>
                         <label for="phone" class="block text-lg font-medium mb-2">رقم الجوال</label>
-                        <input type="tel" id="phone" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent" required>
+                        <input type="tel" id="phone" name="رقم الجوال" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent" required>
                     </div>
                     
                     <div>
                         <label for="email" class="block text-lg font-medium mb-2">البريد الإلكتروني</label>
-                        <input type="email" id="email" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent">
+                        <input type="email" id="email" name="البريد الإلكتروني" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent">
                     </div>
                     
                     <div>
                         <label for="notes" class="block text-lg font-medium mb-2">ملاحظات إضافية (اختياري) + اذا تفضلين تنسيق مُنافساتك أو فريقك بنفس فئتك العمرية، فضلاً اذكري عمرك </label>
-                        <textarea id="notes" rows="3" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent"></textarea>
+                        <textarea id="notes" name="ملاحظات" rows="3" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent"></textarea>
                     </div>
                     
                     <div class="bg-gray-100 p-4 rounded-lg">
@@ -317,7 +330,7 @@
                     </div>
                     
                     <div class="flex items-center">
-                        <input type="checkbox" id="terms" class="w-5 h-5 rounded border-gray-300 text-primary-pink focus:ring-primary-pink" required>
+                        <input type="checkbox" id="terms" name="موافق على الشروط" class="w-5 h-5 rounded border-gray-300 text-primary-pink focus:ring-primary-pink" required>
                         <label for="terms" class="mr-2 text-gray-700">أوافق على الشروط والأحكام</label>
                     </div>
                     
@@ -392,7 +405,7 @@ Ladies, it's time!</p>
                 <i class="fas fa-check text-3xl text-green-500"></i>
             </div>
             <h3 class="text-2xl font-bold mb-4">تم الحجز بنجاح!</h3>
-            <p class="text-gray-600 mb-6" id="success-message">تم تأكيد حجزك لرياضة كرة السلة في بريدة يوم الأحد 15 أكتوبر الساعة 4:00 مساءً.</p>
+            <p class="text-gray-600 mb-6" id="success-message">تم تأكيد حجزك بنجاح وسنتواصل معك قريباً.</p>
             <p class="text-gray-600 mb-6">يرجى إرسال إثبات التحويل عبر الواتساب لتأكيد الحجز.</p>
             <button id="close-modal" class="bg-primary-pink hover:bg-opacity-90 text-white font-bold py-2 px-6 rounded-lg transition">
                 حسناً
@@ -620,6 +633,7 @@ Ladies, it's time!</p>
             const formattedDate = date.toLocaleDateString('ar-EG', options);
             selectedDateElement.textContent = formattedDate;
             document.getElementById('booking-date').textContent = formattedDate;
+            document.getElementById('hidden-date').value = formattedDate;
             
             timeSlots.innerHTML = '';
             
@@ -648,6 +662,8 @@ Ladies, it's time!</p>
                     slotElement.querySelector('button').addEventListener('click', function() {
                         document.getElementById('booking-time').textContent = slot.time;
                         document.getElementById('booking-price').textContent = `${slot.price} ريال`;
+                        document.getElementById('hidden-time').value = slot.time;
+                        document.getElementById('hidden-price').value = `${slot.price} ريال`;
                         document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
                     });
                 }
@@ -660,23 +676,14 @@ Ladies, it's time!</p>
 
         // Booking form submission
         document.getElementById('booking-form').addEventListener('submit', function(e) {
-            e.preventDefault();
+            // Update hidden fields before submission
+            document.getElementById('hidden-sport').value = document.getElementById('booking-sport').textContent;
+            document.getElementById('hidden-city').value = document.getElementById('booking-city').textContent;
             
-            const fullName = document.getElementById('full-name').value;
-            const phone = document.getElementById('phone').value;
-            const email = document.getElementById('email').value;
-            const notes = document.getElementById('notes').value;
-            const sport = document.getElementById('booking-sport').textContent;
-            const city = document.getElementById('booking-city').textContent;
-            const date = document.getElementById('booking-date').textContent;
-            const time = document.getElementById('booking-time').textContent;
-            const price = document.getElementById('booking-price').textContent;
-            
-            const successMessage = `تم تأكيد حجزك لرياضة ${sport} في ${city} يوم ${date} الساعة ${time}.`;
+            // Show success modal (will still submit via FormSubmit)
+            const successMessage = `تم تأكيد حجزك لرياضة ${document.getElementById('booking-sport').textContent}`;
             document.getElementById('success-message').textContent = successMessage;
             document.getElementById('success-modal').classList.remove('hidden');
-            
-            this.reset();
         });
 
         // Close modal
