@@ -519,152 +519,137 @@ const citySchedules = {
         // View calendar for a sport
         const viewCalendarButtons = document.querySelectorAll('.view-calendar-btn');
         
-        viewCalendarButtons.forEach(button => {
-            button.addEventListener('click', function() {
-                const sport = this.dataset.sport;
-                document.getElementById('sport-name').textContent = sport;
-                document.getElementById('city-name').textContent = selectedCity;
-                
-                // Update booking page with selected sport and city
-                document.getElementById('booking-sport').textContent = sport;
-                document.getElementById('booking-city').textContent = selectedCity;
-                
-                // Show calendar section
-                document.getElementById('calendar-section').classList.remove('hidden');
-                
-                // Generate calendar
-                generateCalendar();
-                
-                // Scroll to calendar section
-                document.getElementById('calendar-section').scrollIntoView({ behavior: 'smooth' });
-            });
-        });
+       cityButtons.forEach(button => {
+  button.addEventListener('click', function() {
+    // Update city selection
+    cityButtons.forEach(btn => {
+      btn.classList.remove('bg-primary-dark', 'text-white');
+      btn.classList.add('bg-gray-200', 'hover:bg-gray-300');
+    });
+    
+    this.classList.remove('bg-gray-200', 'hover:bg-gray-300');
+    this.classList.add('bg-primary-dark', 'text-white', 'hover:bg-opacity-90');
+    
+    selectedCity = this.dataset.city;
+    document.getElementById('city-name').textContent = selectedCity;
+    
+    // Regenerate calendar if already viewing a sport
+    if (!document.getElementById('calendar-section').classList.contains('hidden')) {
+      generateCalendar();
+    }
+  });
+});
 
         // Generate calendar days
         function generateCalendar() {
-            const calendarDays = document.getElementById('calendar-days');
-            calendarDays.innerHTML = '';
-            
-            const today = new Date();
-            const startDate = new Date(today);
-            startDate.setDate(today.getDate() + (currentWeek * 7) - today.getDay());
-            
-            // Update week range display
-            const weekEndDate = new Date(startDate);
-            weekEndDate.setDate(startDate.getDate() + 6);
-            
-            const options = { day: 'numeric', month: 'long' };
-            const startDateStr = startDate.toLocaleDateString('ar-EG', options);
-            const endDateStr = weekEndDate.toLocaleDateString('ar-EG', options);
-            
-            document.getElementById('week-range').textContent = `${startDateStr} - ${endDateStr}`;
-            
-            // Generate days
-            for (let i = 0; i < 7; i++) {
-                const dayDate = new Date(startDate);
-                dayDate.setDate(startDate.getDate() + i);
-                
-                const dayElement = document.createElement('div');
-                dayElement.className = 'calendar-day bg-white rounded-lg p-4 text-center cursor-pointer border border-gray-200';
-                
-                // Check if this day is completely unavailable
-                const isUnavailableDay = availabilityConfig.unavailableDays.includes(dayDate.getDay());
-                
-                // Disable past days and unavailable days
-                if ((dayDate < today && dayDate.toDateString() !== today.toDateString()) || isUnavailableDay) {
-                    dayElement.classList.add('disabled', 'opacity-50');
-                    dayElement.classList.remove('cursor-pointer');
-                }
-                
-                // Highlight today
-                if (dayDate.toDateString() === today.toDateString()) {
-                    dayElement.classList.add('border-primary-pink', 'border-2');
-                }
-                
-                dayElement.innerHTML = `
-                    <div class="font-bold">${dayDate.toLocaleDateString('ar-EG', { weekday: 'long' })}</div>
-                    <div class="text-2xl my-2">${dayDate.getDate()}</div>
-                    <div class="text-sm text-gray-500">${dayDate.toLocaleDateString('ar-EG', { month: 'long' })}</div>
-                `;
-                
-                dayElement.addEventListener('click', function() {
-                    if (!this.classList.contains('disabled')) {
-                        // Remove active class from all days
-                        document.querySelectorAll('.calendar-day').forEach(day => {
-                            day.classList.remove('active-day');
-                        });
-                        
-                        // Add active class to clicked day
-                        this.classList.add('active-day');
-                        
-                        // Show time slots for this day
-                        showTimeSlots(dayDate);
-                    }
-                });
-                
-                calendarDays.appendChild(dayElement);
-            }
-        }
+  const calendarDays = document.getElementById('calendar-days');
+  calendarDays.innerHTML = '';
+  
+  const today = new Date();
+  const startDate = new Date(today);
+  startDate.setDate(today.getDate() + (currentWeek * 7) - today.getDay());
+  
+  const currentSport = document.getElementById('sport-name').textContent;
+  const currentCity = selectedCity;
+
+  // Get schedule for current city and sport
+  const sportSchedule = citySchedules[currentCity]?.[currentSport] || {};
+  const availableDays = sportSchedule.availableDays || [];
+
+  // Generate days
+  for (let i = 0; i < 7; i++) {
+    const dayDate = new Date(startDate);
+    dayDate.setDate(startDate.getDate() + i);
+    
+    const dayElement = document.createElement('div');
+    const isAvailable = availableDays.includes(dayDate.getDay());
+    const isPast = dayDate < today && dayDate.toDateString() !== today.toDateString();
+    
+    dayElement.className = `calendar-day bg-white rounded-lg p-4 text-center border ${
+      isAvailable && !isPast ? 'cursor-pointer border-gray-200' : 'opacity-50 cursor-not-allowed border-gray-100'
+    }`;
+    
+    // Highlight today
+    if (dayDate.toDateString() === today.toDateString()) {
+      dayElement.classList.add('border-primary-pink', 'border-2');
+    }
+
+    dayElement.innerHTML = `
+      <div class="font-bold">${dayDate.toLocaleDateString('ar-EG', { weekday: 'long' })}</div>
+      <div class="text-2xl my-2">${dayDate.getDate()}</div>
+      <div class="text-sm text-gray-500">${dayDate.toLocaleDateString('ar-EG', { month: 'long' })}</div>
+    `;
+    
+    if (isAvailable && !isPast) {
+      dayElement.addEventListener('click', function() {
+        // Remove active class from all days
+        document.querySelectorAll('.calendar-day').forEach(day => {
+          day.classList.remove('active-day');
+        });
+        
+        // Add active class to clicked day
+        this.classList.add('active-day');
+        
+        // Show time slots for this day
+        showTimeSlots(dayDate, sportSchedule.timeSlots);
+      });
+    }
+    
+    calendarDays.appendChild(dayElement);
+  }
+}
 
         // Show time slots for a selected day
-        function showTimeSlots(date) {
-            const timeSlotsContainer = document.getElementById('time-slots-container');
-            const timeSlots = document.getElementById('time-slots');
-            const selectedDateElement = document.getElementById('selected-date').querySelector('span');
-            
-            // Format date in Arabic
-            const options = { weekday: 'long', day: 'numeric', month: 'long' };
-            const formattedDate = date.toLocaleDateString('ar-EG', options);
-            selectedDateElement.textContent = formattedDate;
-            
-            // Update booking page with selected date
-            document.getElementById('booking-date').textContent = formattedDate;
-            
-            // Get current sport
-            const currentSport = document.getElementById('sport-name').textContent;
-            
-            // Get time slots for this sport
-            const slots = availabilityConfig.timeSlots[currentSport] || [];
-            
-            // Display time slots
-            timeSlots.innerHTML = '';
-            
-            slots.forEach(slot => {
-                const slotElement = document.createElement('div');
-                slotElement.className = 'bg-white rounded-lg p-4 border border-gray-200';
-                
-                const isFull = slot.available === 0;
-                const isAlmostFull = slot.available <= 2 && slot.available > 0;
-                
-                slotElement.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold">${slot.time}</span>
-                        <span class="text-sm ${isFull ? 'text-red-500' : isAlmostFull ? 'text-yellow-500' : 'text-green-500'}">
-                            ${isFull ? 'اكتمل' : `متاح (${slot.available}/${slot.max})`}
-                        </span>
-                    </div>
-                    <div class="text-sm text-gray-600 mb-2">السعر: ${slot.price} ريال</div>
-                    <button class="w-full mt-2 py-2 rounded-lg ${isFull ? 'bg-gray-200 cursor-not-allowed' : 'bg-primary-pink hover:bg-opacity-90 text-white'} transition" ${isFull ? 'disabled' : ''}>
-                        ${isFull ? 'اكتمل العدد' : 'اختيار هذا الموعد'}
-                    </button>
-                `;
-                
-                if (!isFull) {
-                    slotElement.querySelector('button').addEventListener('click', function() {
-                        // Update booking page with selected time and price
-                        document.getElementById('booking-time').textContent = slot.time;
-                        document.getElementById('booking-price').textContent = `${slot.price} ريال`;
-                        
-                        // Scroll to booking section
-                        document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
-                    });
-                }
-                
-                timeSlots.appendChild(slotElement);
-            });
-            
-            timeSlotsContainer.classList.remove('hidden');
-        }
+        function showTimeSlots(date, slots) {
+  const timeSlotsContainer = document.getElementById('time-slots-container');
+  const timeSlots = document.getElementById('time-slots');
+  const selectedDateElement = document.getElementById('selected-date').querySelector('span');
+  
+  // Format date in Arabic
+  const options = { weekday: 'long', day: 'numeric', month: 'long' };
+  const formattedDate = date.toLocaleDateString('ar-EG', options);
+  selectedDateElement.textContent = formattedDate;
+  
+  // Update booking page with selected date
+  document.getElementById('booking-date').textContent = formattedDate;
+  
+  // Display time slots
+  timeSlots.innerHTML = '';
+  
+  (slots || []).forEach(slot => {
+    const slotElement = document.createElement('div');
+    const isFull = slot.available === 0;
+    const isAlmostFull = slot.available <= 2 && slot.available > 0;
+    
+    slotElement.className = 'bg-white rounded-lg p-4 border border-gray-200';
+    slotElement.innerHTML = `
+      <div class="flex justify-between items-center mb-2">
+        <span class="font-bold">${slot.time}</span>
+        <span class="text-sm ${isFull ? 'text-red-500' : isAlmostFull ? 'text-yellow-500' : 'text-green-500'}">
+          ${isFull ? 'اكتمل' : `متاح (${slot.available}/${slot.max})`}
+        </span>
+      </div>
+      <div class="text-sm text-gray-600 mb-2">السعر: ${slot.price} ريال</div>
+      <button class="w-full mt-2 py-2 rounded-lg ${
+        isFull ? 'bg-gray-200 cursor-not-allowed' : 'bg-primary-pink hover:bg-opacity-90 text-white'
+      } transition" ${isFull ? 'disabled' : ''}>
+        ${isFull ? 'اكتمل العدد' : 'اختيار هذا الموعد'}
+      </button>
+    `;
+    
+    if (!isFull) {
+      slotElement.querySelector('button').addEventListener('click', function() {
+        document.getElementById('booking-time').textContent = slot.time;
+        document.getElementById('booking-price').textContent = `${slot.price} ريال`;
+        document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
+      });
+    }
+    
+    timeSlots.appendChild(slotElement);
+  });
+  
+  timeSlotsContainer.classList.remove('hidden');
+}
 
         // Booking form submission
         document.getElementById('booking-form').addEventListener('submit', function(e) {
