@@ -422,36 +422,33 @@ Ladies, it’s time!</p>
             unavailableDays: [5], // Friday is unavailable (you can add more days)
             
             // Available time slots for each sport (you can customize this)
-            timeSlots: {
-                "كرة السلة": [
-                    { time: '4:00 مساءً', available: 5, max: 10, price: 75 },
-                    { time: '5:30 مساءً', available: 2, max: 10, price: 75 },
-                    { time: '7:00 مساءً', available: 8, max: 10, price: 75 },
-                    { time: '8:30 مساءً', available: 0, max: 10, price: 75 }
-                ],
-                "تنس الريشة": [
-                    { time: '3:00 مساءً', available: 4, max: 8, price: 60 },
-                    { time: '4:30 مساءً', available: 6, max: 8, price: 60 },
-                    { time: '6:00 مساءً', available: 1, max: 8, price: 60 }
-                ],
-                "كرة القدم": [
-                    { time: '5:00 مساءً', available: 7, max: 12, price: 80 },
-                    { time: '6:30 مساءً', available: 3, max: 12, price: 80 }
-                ],
-                "كرة الطائرة": [
-                    { time: '4:00 مساءً', available: 5, max: 10, price: 70 },
-                    { time: '5:30 مساءً', available: 8, max: 10, price: 70 }
-                ],
-                "التنس": [
-                    { time: '3:30 مساءً', available: 2, max: 4, price: 90 },
-                    { time: '5:00 مساءً', available: 4, max: 4, price: 90 }
-                ],
-                "السهام": [
-                    { time: '4:00 مساءً', available: 3, max: 6, price: 65 },
-                    { time: '5:30 مساءً', available: 6, max: 6, price: 65 }
-                ]
-            }
-        };
+          // ========== SCHEDULE CONFIGURATION ==========
+const citySchedules = {
+  "بريدة": {
+    "كرة السلة": {
+      availableDays: [0, 2, 4], // Sunday, Tuesday, Thursday (0-6 where 0 is Sunday)
+      timeSlots: [
+        { time: '4:00 مساءً', available: 5, max: 10, price: 75 },
+        { time: '6:00 مساءً', available: 8, max: 10, price: 75 }
+      ]
+    },
+    "تنس الريشة": {
+      availableDays: [1, 3], // Monday, Wednesday
+      timeSlots: [
+        { time: '5:00 مساءً', available: 4, max: 8, price: 60 }
+      ]
+    }
+  },
+  "عنيزة": {
+    "كرة القدم": {
+      availableDays: [0, 3, 5], // Sunday, Wednesday, Friday
+      timeSlots: [
+        { time: '5:30 مساءً', available: 7, max: 12, price: 80 }
+      ]
+    }
+  }
+  // Add other cities...
+};
         // ========== END CONFIGURATION SECTION ==========
         
         // Mobile menu toggle
