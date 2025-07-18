@@ -446,7 +446,9 @@ Ladies, it's time!</p>
         </div>
     </div>
 
-    // Check available slots for a specific time
+    
+    <!-- Calendar and Booking System JavaScript -->
+    <script>
 async function getAvailableSlots(city, sport, date, time) {
     const bookingsRef = ref(db, 'bookings');
     const bookingQuery = query(
@@ -479,7 +481,7 @@ async function saveBooking(bookingData) {
         return false;
     }
 }
-
+    </script>
 
     <!-- Firebase and App Scripts -->
     <script type="module">
