@@ -773,12 +773,15 @@ document.getElementById('booking-form').addEventListener('submit', async functio
 
     try {
         // 1. FIRST: Try saving to Firebase
-        console.log("Attempting Firebase save...");
-        const bookingsRef = window.firebaseRef(window.firebaseDatabase, 'bookings');
-        const firebaseResult = await window.firebasePush(bookingsRef, formData);
-        
-        console.log("Firebase save result:", firebaseResult);
-        if (!firebaseResult.key) throw new Error("Firebase didn't return a key");
+        let firebaseSuccess = false;
+        try {
+            const bookingsRef = window.firebaseRef(window.firebaseDatabase, 'bookings');
+            await window.firebasePush(bookingsRef, formData);
+            firebaseSuccess = true;
+            console.log("Firebase save successful");
+        } catch (firebaseError) {
+            console.error("Firebase error:", firebaseError);
+        }
 
         // 2. SECOND: Try sending email via FormSubmit
         let formSubmitSuccess = false;
