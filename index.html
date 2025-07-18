@@ -693,41 +693,63 @@ Ladies, it's time!</p>
             timeSlotsContainer.classList.remove('hidden');
         }
 
-        // Firebase form submission
-        document.getElementById('booking-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // Get form data
-            const formData = {
-                sport: document.getElementById('booking-sport').textContent,
-                city: document.getElementById('booking-city').textContent,
-                date: document.getElementById('booking-date').textContent,
-                time: document.getElementById('booking-time').textContent,
-                price: document.getElementById('booking-price').textContent,
-                fullName: document.getElementById('full-name').value,
-                phone: document.getElementById('phone').value,
-                email: document.getElementById('email').value,
-                notes: document.getElementById('notes').value,
-                timestamp: new Date().toISOString()
-            };
+    // Firebase form submission
+    document.getElementById('booking-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Validate form
+        if (!document.getElementById('terms').checked) {
+            alert('يرجى الموافقة على الشروط والأحكام');
+            return;
+        }
+
+        // Get form data
+        const formData = {
+            sport: document.getElementById('booking-sport').textContent,
+            city: document.getElementById('booking-city').textContent,
+            date: document.getElementById('booking-date').textContent,
+            time: document.getElementById('booking-time').textContent,
+            price: document.getElementById('booking-price').textContent,
+            fullName: document.getElementById('full-name').value,
+            phone: document.getElementById('phone').value,
+            email: document.getElementById('email').value || 'لم يتم تقديمه',
+            notes: document.getElementById('notes').value || 'لا يوجد',
+            timestamp: new Date().toISOString()
+        };
+
+        // Validate required fields
+        if (!formData.fullName || !formData.phone) {
+            alert('يرجى ملء جميع الحقول المطلوبة');
+            return;
+        }
+
+        try {
+            // Show loading state
+            const submitBtn = document.querySelector('#booking-form button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
             
             // Save to Firebase
             const bookingsRef = window.firebaseRef(window.firebaseDatabase, 'bookings');
-            window.firebasePush(bookingsRef, formData)
-                .then(() => {
-                    // Show success message
-                    const successMessage = `تم تأكيد حجزك لرياضة ${formData.sport}`;
-                    document.getElementById('success-message').textContent = successMessage;
-                    document.getElementById('success-modal').classList.remove('hidden');
-                    
-                    // Reset form
-                    document.getElementById('booking-form').reset();
-                })
-                .catch((error) => {
-                    console.error('Error saving booking:', error);
-                    alert('حدث خطأ أثناء حفظ الحجز. يرجى المحاولة مرة أخرى أو التواصل معنا عبر الواتساب.');
-                });
-        });
+            await window.firebasePush(bookingsRef, formData);
+            
+            // Show success message
+            const successMessage = `تم تأكيد حجزك لرياضة ${formData.sport}`;
+            document.getElementById('success-message').textContent = successMessage;
+            document.getElementById('success-modal').classList.remove('hidden');
+            
+            // Reset form
+            document.getElementById('booking-form').reset();
+        } catch (error) {
+            console.error('Error saving booking:', error);
+            alert('حدث خطأ أثناء حفظ الحجز. يرجى المحاولة مرة أخرى أو التواصل معنا عبر الواتساب.');
+        } finally {
+            // Reset button state
+            const submitBtn = document.querySelector('#booking-form button[type="submit"]');
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'تأكيد الحجز';
+        }
+    });
 
         // Close modal
         document.getElementById('close-modal').addEventListener('click', function() {
