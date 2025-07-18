@@ -446,12 +446,49 @@ Ladies, it's time!</p>
         </div>
     </div>
 
+    
+    <!-- Calendar and Booking System JavaScript -->
+    <script>
+async function getAvailableSlots(city, sport, date, time) {
+    const bookingsRef = ref(db, 'bookings');
+    const bookingQuery = query(
+        bookingsRef,
+        orderByChild('compositeKey'),
+        equalTo(`${city}_${sport}_${date}_${time}`)
+    );
+    
+    const snapshot = await new Promise(resolve => 
+        onValue(bookingQuery, resolve, { onlyOnce: true })
+    );
+    
+    const bookings = snapshot.val() || {};
+    const baseSlot = baseAvailability[city]?.[sport]?.timeSlots?.find(s => s.time === time);
+    return baseSlot ? Math.max(0, baseSlot.max - Object.keys(bookings).length) : 0;
+}
+
+// Save booking to Firebase
+async function saveBooking(bookingData) {
+    try {
+        const bookingsRef = ref(db, 'bookings');
+        const newBookingRef = push(bookingsRef);
+        await set(newBookingRef, {
+            ...bookingData,
+            timestamp: Date.now()
+        });
+        return true;
+    } catch (error) {
+        console.error("Error saving booking:", error);
+        return false;
+    }
+}
+    </script>
+
     <!-- Firebase and App Scripts -->
     <script type="module">
         // Firebase imports
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-        import { getDatabase, ref, push, set, query, orderByChild, equalTo, onValue, update, remove } 
-              from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
+        import { getDatabase, ref, push, set, query, orderByChild, equalTo, onValue, update } 
+              from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
 
         // Your Firebase config
         const firebaseConfig = {
@@ -459,7 +496,7 @@ Ladies, it's time!</p>
             authDomain: "booking-haiya.firebaseapp.com",
             databaseURL: "https://booking-haiya-default-rtdb.europe-west1.firebasedatabase.app",
             projectId: "booking-haiya",
-            storageBucket: "booking-haiya.appspot.com",
+            storageBucket: "booking-haiya.firebasestorage.app",
             messagingSenderId: "920297070543",
             appId: "1:920297070543:web:3e216c54a933b493fcfcba",
             measurementId: "G-57T61BEJWD"
@@ -541,286 +578,6 @@ Ladies, it's time!</p>
                 }
             }
         };
-
-        // ========== GLOBAL VARIABLES ==========
-        let currentCity = "بريدة";
-        let currentSport = "";
-        let currentWeekOffset = 0;
-        let selectedDate = null;
-
-        // ========== DOM ELEMENTS ==========
-        const mobileMenuButton = document.getElementById('mobile-menu-button');
-        const mobileMenu = document.getElementById('mobile-menu');
-        const cityButtons = document.querySelectorAll('.city-btn');
-        const viewCalendarButtons = document.querySelectorAll('.view-calendar-btn');
-        const backToActivitiesBtn = document.querySelector('.back-to-activities');
-        const calendarSection = document.getElementById('calendar-section');
-        const activitiesSection = document.getElementById('activities');
-        const calendarTitle = document.getElementById('calendar-title');
-        const sportNameSpan = document.getElementById('sport-name');
-        const cityNameSpan = document.getElementById('city-name');
-        const weekRangeSpan = document.getElementById('week-range');
-        const calendarDays = document.getElementById('calendar-days');
-        const prevWeekBtn = document.getElementById('prev-week');
-        const nextWeekBtn = document.getElementById('next-week');
-        const timeSlotsContainer = document.getElementById('time-slots-container');
-        const selectedDateSpan = document.querySelector('#selected-date span');
-        const timeSlots = document.getElementById('time-slots');
-        const bookingSport = document.getElementById('booking-sport');
-        const bookingCity = document.getElementById('booking-city');
-        const bookingDate = document.getElementById('booking-date');
-        const bookingTime = document.getElementById('booking-time');
-        const bookingPrice = document.getElementById('booking-price');
-        const hiddenSport = document.getElementById('hidden-sport');
-        const hiddenCity = document.getElementById('hidden-city');
-        const hiddenDate = document.getElementById('hidden-date');
-        const hiddenTime = document.getElementById('hidden-time');
-        const hiddenPrice = document.getElementById('hidden-price');
-        const bookingForm = document.getElementById('booking-form');
-        const successModal = document.getElementById('success-modal');
-        const closeModalBtn = document.getElementById('close-modal');
-
-        // ========== EVENT LISTENERS ==========
-        mobileMenuButton.addEventListener('click', () => {
-            mobileMenu.classList.toggle('hidden');
-        });
-
-        cityButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                cityButtons.forEach(btn => {
-                    btn.classList.remove('bg-primary-dark', 'text-white');
-                    btn.classList.add('bg-gray-200');
-                });
-                button.classList.remove('bg-gray-200');
-                button.classList.add('bg-primary-dark', 'text-white');
-                currentCity = button.dataset.city;
-            });
-        });
-
-        viewCalendarButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                currentSport = button.dataset.sport;
-                currentWeekOffset = 0;
-                updateCalendar();
-                activitiesSection.classList.add('hidden');
-                calendarSection.classList.remove('hidden');
-                window.scrollTo(0, 0);
-            });
-        });
-
-        backToActivitiesBtn.addEventListener('click', () => {
-            calendarSection.classList.add('hidden');
-            activitiesSection.classList.remove('hidden');
-            window.scrollTo(0, 0);
-        });
-
-        prevWeekBtn.addEventListener('click', () => {
-            currentWeekOffset--;
-            updateCalendar();
-        });
-
-        nextWeekBtn.addEventListener('click', () => {
-            currentWeekOffset++;
-            updateCalendar();
-        });
-
-        bookingForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            if (!document.getElementById('terms').checked) {
-                alert('يرجى الموافقة على الشروط والأحكام');
-                return;
-            }
-
-            const city = bookingCity.textContent;
-            const sport = bookingSport.textContent;
-            const date = bookingDate.textContent;
-            const time = bookingTime.textContent;
-            
-            const bookingData = {
-                name: document.getElementById('full-name').value,
-                phone: document.getElementById('phone').value,
-                email: document.getElementById('email').value,
-                notes: document.getElementById('notes').value,
-                city: city,
-                sport: sport,
-                date: date,
-                time: time,
-                price: hiddenPrice.value,
-                status: "Pending",
-                compositeKey: `${city}_${sport}_${date}_${time}`
-            };
-
-            const submitBtn = this.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ';
-
-            try {
-                const available = await getAvailableSlots(city, sport, date, time);
-                if (available <= 0) {
-                    throw new Error('هذا الموعد لم يعد متاحاً');
-                }
-                
-                const success = await saveBooking(bookingData);
-                if (success) {
-                    document.getElementById('success-message').textContent = 
-                        `تم تأكيد حجز ${bookingData.name} لرياضة ${bookingData.sport}`;
-                    document.getElementById('success-modal').classList.remove('hidden');
-                    this.reset();
-                }
-            } catch (error) {
-                alert(`حدث خطأ: ${error.message}`);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'تأكيد الحجز';
-            }
-        });
-
-        closeModalBtn.addEventListener('click', function() {
-            successModal.classList.add('hidden');
-        });
-
-        // ========== CALENDAR FUNCTIONS ==========
-        function updateCalendar() {
-            // Update title
-            sportNameSpan.textContent = currentSport;
-            cityNameSpan.textContent = currentCity;
-            
-            // Get current week dates
-            const now = new Date();
-            const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
-            const currentDate = now.getDate();
-            
-            // Calculate start of week (Sunday)
-            const startOfWeek = new Date(now);
-            startOfWeek.setDate(currentDate - currentDay + (currentWeekOffset * 7));
-            
-            // Calculate end of week (Saturday)
-            const endOfWeek = new Date(startOfWeek);
-            endOfWeek.setDate(startOfWeek.getDate() + 6);
-            
-            // Update week range display
-            const options = { month: 'long', day: 'numeric' };
-            weekRangeSpan.textContent = `من ${startOfWeek.toLocaleDateString('ar-EG', options)} إلى ${endOfWeek.toLocaleDateString('ar-EG', options)}`;
-            
-            // Clear previous days
-            calendarDays.innerHTML = '';
-            
-            // Populate calendar days
-            for (let i = 0; i < 7; i++) {
-                const dayDate = new Date(startOfWeek);
-                dayDate.setDate(startOfWeek.getDate() + i);
-                
-                const dayElement = document.createElement('div');
-                dayElement.className = 'calendar-day text-center py-4 rounded-lg cursor-pointer';
-                
-                // Check if this day is available for the selected sport
-                const sportAvailability = baseAvailability[currentCity]?.[currentSport];
-                const isAvailable = sportAvailability?.availableDays.includes(i);
-                
-                if (!isAvailable) {
-                    dayElement.classList.add('disabled', 'bg-gray-100', 'text-gray-400');
-                    dayElement.classList.remove('cursor-pointer');
-                } else {
-                    dayElement.classList.add('hover:bg-primary-pink', 'hover:text-white');
-                    if (selectedDate && dayDate.toDateString() === selectedDate.toDateString()) {
-                        dayElement.classList.add('active-day');
-                    }
-                }
-                
-                dayElement.innerHTML = `
-                    <div class="font-bold">${dayDate.toLocaleDateString('ar-EG', { day: 'numeric' })}</div>
-                    <div class="text-sm">${getDayName(i)}</div>
-                `;
-                
-                if (isAvailable) {
-                    dayElement.addEventListener('click', () => {
-                        selectDate(dayDate);
-                    });
-                }
-                
-                calendarDays.appendChild(dayElement);
-            }
-        }
-
-        function getDayName(dayIndex) {
-            const days = ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت'];
-            return days[dayIndex];
-        }
-
-        async function selectDate(date) {
-            selectedDate = date;
-            updateCalendar();
-            
-            // Show loading state
-            timeSlotsContainer.classList.remove('hidden');
-            timeSlots.innerHTML = '<div class="col-span-3 py-8 text-center"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
-            
-            // Format date for display
-            const options = { weekday: 'long', month: 'long', day: 'numeric' };
-            selectedDateSpan.textContent = date.toLocaleDateString('ar-EG', options);
-            
-            // Get time slots for selected sport and city
-            const sportAvailability = baseAvailability[currentCity][currentSport];
-            
-            // Clear previous time slots
-            timeSlots.innerHTML = '';
-            
-            // Populate time slots
-            for (const slot of sportAvailability.timeSlots) {
-                const available = await getAvailableSlots(currentCity, currentSport, formatDate(date), slot.time);
-                
-                const slotElement = document.createElement('div');
-                slotElement.className = 'bg-white border rounded-lg p-4 text-center';
-                
-                slotElement.innerHTML = `
-                    <div class="font-bold text-lg mb-2">${slot.time}</div>
-                    <div class="text-gray-600 mb-3">${available} / ${slot.max} متاح</div>
-                    <div class="font-bold text-primary-dark mb-3">${slot.price} ريال</div>
-                    <button class="book-btn w-full bg-primary-pink hover:bg-opacity-90 text-white py-2 rounded-lg transition" 
-                            data-time="${slot.time}" data-price="${slot.price}">
-                        احجز الآن
-                    </button>
-                `;
-                
-                if (available <= 0) {
-                    slotElement.querySelector('.book-btn').disabled = true;
-                    slotElement.querySelector('.book-btn').classList.add('opacity-50', 'cursor-not-allowed');
-                } else {
-                    slotElement.querySelector('.book-btn').addEventListener('click', (e) => {
-                        e.preventDefault();
-                        bookTimeSlot(slot.time, slot.price);
-                    });
-                }
-                
-                timeSlots.appendChild(slotElement);
-            }
-        }
-
-        function formatDate(date) {
-            const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-            return date.toLocaleDateString('ar-EG', options).replace(/\s/g, '');
-        }
-
-        function bookTimeSlot(time, price) {
-            // Update booking details
-            bookingSport.textContent = currentSport;
-            bookingCity.textContent = currentCity;
-            bookingDate.textContent = selectedDate.toLocaleDateString('ar-EG', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            bookingTime.textContent = time;
-            bookingPrice.textContent = price + ' ريال';
-            
-            // Update hidden fields
-            hiddenSport.value = currentSport;
-            hiddenCity.value = currentCity;
-            hiddenDate.value = formatDate(selectedDate);
-            hiddenTime.value = time;
-            hiddenPrice.value = price;
-            
-            // Scroll to booking section
-            calendarSection.classList.add('hidden');
-            document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
-        }
 
         // ========== BOOKING FUNCTIONS ==========
         async function saveBooking(bookingData) {
@@ -910,11 +667,67 @@ Ladies, it's time!</p>
 
         function deleteBooking(bookingId) {
             if (confirm('هل أنت متأكد من حذف هذه الحجز؟')) {
-                remove(ref(db, `bookings/${bookingId}`));
+                set(ref(db, `bookings/${bookingId}`), null);
             }
         }
 
-        // ========== INITIALIZATION ==========
+        // ========== EVENT LISTENERS ==========
+        document.getElementById('booking-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!document.getElementById('terms').checked) {
+                alert('يرجى الموافقة على الشروط والأحكام');
+                return;
+            }
+
+            const city = document.getElementById('booking-city').textContent;
+            const sport = document.getElementById('booking-sport').textContent;
+            const date = document.getElementById('booking-date').textContent;
+            const time = document.getElementById('booking-time').textContent;
+            
+            const bookingData = {
+                name: document.getElementById('full-name').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                notes: document.getElementById('notes').value,
+                city: city,
+                sport: sport,
+                date: date,
+                time: time,
+                price: document.getElementById('hidden-price').value,
+                status: "Pending",
+                compositeKey: `${city}_${sport}_${date}_${time}`
+            };
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ';
+
+            try {
+                const available = await getAvailableSlots(city, sport, date, time);
+                if (available <= 0) {
+                    throw new Error('هذا الموعد لم يعد متاحاً');
+                }
+                
+                const success = await saveBooking(bookingData);
+                if (success) {
+                    document.getElementById('success-message').textContent = 
+                        `تم تأكيد حجز ${bookingData.name} لرياضة ${bookingData.sport}`;
+                    document.getElementById('success-modal').classList.remove('hidden');
+                    this.reset();
+                }
+            } catch (error) {
+                alert(`حدث خطأ: ${error.message}`);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'تأكيد الحجز';
+            }
+        });
+
+        document.getElementById('close-modal').addEventListener('click', function() {
+            document.getElementById('success-modal').classList.add('hidden');
+        });
+
         // Show admin panel when URL has #admin
         if (window.location.hash === '#admin') {
             document.getElementById('admin').classList.remove('hidden');
@@ -923,6 +736,7 @@ Ladies, it's time!</p>
             loadAdminBookings();
         }
 
+        // [Keep all your existing calendar and UI functions]
         // Initialize default city button as active
         document.querySelector('.city-btn[data-city="بريدة"]').click();
     </script>
