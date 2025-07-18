@@ -329,6 +329,9 @@
                     <input type="hidden" name="التاريخ" id="hidden-date">
                     <input type="hidden" name="الوقت" id="hidden-time">
                     <input type="hidden" name="السعر" id="hidden-price">
+
+                    <input type="hidden" id="hidden-formatted-date">
+
                     
                     <div>
                         <label for="full-name" class="block text-lg font-medium mb-2">الاسم الكامل</label>
@@ -452,7 +455,7 @@ Ladies, it's time!</p>
         </div>
     </div>
 
-   <script>
+<script>
     // Firebase SDK v8 (compatible with GitHub Pages)
     // Your Firebase config and initialization
     const firebaseConfig = {
@@ -600,6 +603,7 @@ Ladies, it's time!</p>
     // City selection
     const cityButtons = document.querySelectorAll('.city-btn');
     let selectedCity = 'بريدة'; // Default city
+    let selectedSport = ''; // Initialize selectedSport
 
     cityButtons.forEach(button => {
         button.addEventListener('click', function() {
@@ -613,11 +617,9 @@ Ladies, it's time!</p>
             document.getElementById('city-name').textContent = selectedCity;
             document.getElementById('booking-city').textContent = selectedCity; // Update booking city
 
-            // If a sport is already selected, re-generate calendar and update availability
+            // If a sport is already selected, re-generate calendar (which triggers showTimeSlots)
             if (selectedSport) {
-                generateCalendar(); // This will call showTimeSlots which creates buttons
-                // The Firebase listener (db.ref('bookings').on('value')) will automatically trigger updateTimeSlotAvailability
-                // once the time slots are rendered.
+                generateCalendar();
             }
         });
     });
@@ -627,13 +629,11 @@ Ladies, it's time!</p>
     document.getElementById('prev-week').addEventListener('click', function() {
         currentWeek--;
         generateCalendar();
-        // The Firebase listener will handle the update once calendar is generated
     });
 
     document.getElementById('next-week').addEventListener('click', function() {
         currentWeek++;
         generateCalendar();
-        // The Firebase listener will handle the update once calendar is generated
     });
 
     // Back to activities button
@@ -647,7 +647,6 @@ Ladies, it's time!</p>
 
     // View calendar for a sport
     const viewCalendarButtons = document.querySelectorAll('.view-calendar-btn');
-    let selectedSport = '';
 
     viewCalendarButtons.forEach(button => {
         button.addEventListener('click', function() {
@@ -672,6 +671,9 @@ Ladies, it's time!</p>
         calendarDays.innerHTML = '';
 
         const today = new Date();
+        // Set today's time to 00:00:00 to ensure consistent "past" comparison
+        today.setHours(0, 0, 0, 0);
+
         const startDate = new Date(today);
         startDate.setDate(today.getDate() + (currentWeek * 7) - today.getDay());
 
@@ -696,10 +698,12 @@ Ladies, it's time!</p>
         for (let i = 0; i < 7; i++) {
             const dayDate = new Date(startDate);
             dayDate.setDate(startDate.getDate() + i);
+            dayDate.setHours(0, 0, 0, 0); // Normalize dayDate for comparison
 
             const dayElement = document.createElement('div');
             const isAvailable = availableDays.includes(dayDate.getDay());
-            const isPast = dayDate < today && dayDate.toDateString() !== today.toDateString();
+            // Check if dayDate is strictly before today, meaning it's a past day
+            const isPast = dayDate < today;
 
             dayElement.className = `calendar-day bg-white rounded-lg p-4 text-center border ${
                     isAvailable && !isPast ? 'cursor-pointer border-gray-200 hover:bg-primary-pink hover:text-white' : 'opacity-50 cursor-not-allowed border-gray-100'
@@ -722,8 +726,8 @@ Ladies, it's time!</p>
                     });
                     this.classList.add('active-day');
                     showTimeSlots(dayDate, sportSchedule.timeSlots);
-                    // No direct call to updateTimeSlotAvailability here, the Firebase listener will handle it
-                    // once showTimeSlots renders the buttons.
+                    // Explicitly trigger update for the newly shown time slots
+                    db.ref('bookings').once('value').then(snapshot => updateTimeSlotAvailability(snapshot));
                 });
             }
 
@@ -745,11 +749,16 @@ Ladies, it's time!</p>
         };
         // Use 'en-CA' for data-date attribute to ensure consistent YYYY-MM-DD format for Firebase keys
         const formattedDateForDisplay = date.toLocaleDateString('ar-EG', options);
-        const formattedDateForData = date.toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' });
+        const formattedDateForData = date.toLocaleDateString('en-CA', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit'
+        });
 
         selectedDateElement.textContent = formattedDateForDisplay;
         document.getElementById('booking-date').textContent = formattedDateForDisplay;
         document.getElementById('hidden-date').value = formattedDateForDisplay;
+        document.getElementById('hidden-formatted-date').value = formattedDateForData; // Set the new hidden input
 
         timeSlots.innerHTML = ''; // Clear previous slots
 
@@ -802,16 +811,9 @@ Ladies, it's time!</p>
         // 1. Count current bookings from Firebase
         bookingsSnapshot.forEach(childSnapshot => {
             const booking = childSnapshot.val();
-            // Ensure all necessary fields exist to create the key
+            // Ensure all necessary fields exist to create the key and use the YYYY-MM-DD date
             if (booking.date && booking.time && booking.city && booking.sport) {
-                // Ensure date format matches 'en-CA' (YYYY-MM-DD) for key consistency
-                // If booking.date is already formatted (e.g. "الأربعاء، 12 يوليو 2025"), convert it if needed
-                // For simplicity, let's assume booking.date in Firebase is already YYYY-MM-DD or needs converting.
-                // If your Firebase `booking.date` field is formatted like "الأربعاء، 12 يوليو 2025", you need to convert it:
-                // const bookingDate = new Date(booking.date.replace(/[^0-9\s-ء-ي]+/g, '').trim()).toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' });
-                // For now, assuming direct use of booking.date as it's saved.
                 const slotKey = `${booking.date}_${booking.time}_${booking.city}_${booking.sport}`;
-
                 if (bookedSlotsCount[slotKey]) {
                     bookedSlotsCount[slotKey]++;
                 } else {
@@ -853,13 +855,13 @@ Ladies, it's time!</p>
 
             // Update button styling and disable status based on actual availability
             if (remaining <= 0) {
-                button.classList.add('bg-red-200', 'text-gray-500', 'cursor-not-allowed');
-                button.classList.remove('bg-primary-pink', 'hover:bg-opacity-90', 'text-white');
+                button.classList.add('bg-gray-200', 'text-gray-500', 'cursor-not-allowed'); // Change to gray for full
+                button.classList.remove('bg-primary-pink', 'hover:bg-opacity-90', 'text-white', 'border-blue-500'); // Remove active/original styles
                 button.disabled = true;
                 // Update the time display to show "اكتمل العدد"
                 button.querySelector('span.font-bold').textContent = `${time} - اكتمل العدد`;
             } else {
-                button.classList.remove('bg-red-200', 'text-gray-500', 'cursor-not-allowed');
+                button.classList.remove('bg-gray-200', 'text-gray-500', 'cursor-not-allowed');
                 button.classList.add('bg-primary-pink', 'hover:bg-opacity-90', 'text-white');
                 button.disabled = false;
                 // Reset the time display
@@ -889,8 +891,7 @@ Ladies, it's time!</p>
         const formData = {
             sport: document.getElementById('booking-sport').textContent,
             city: document.getElementById('booking-city').textContent,
-            // Ensure date and time are in consistent format for Firebase key if you change it above
-            date: document.getElementById('booking-date').textContent, // This is for display
+            date: document.getElementById('booking-date').textContent, // For display in success message
             time: document.getElementById('booking-time').textContent,
             price: document.getElementById('booking-price').textContent,
             fullName: document.getElementById('full-name').value,
@@ -899,35 +900,11 @@ Ladies, it's time!</p>
             notes: document.getElementById('notes').value
         };
 
-        // Convert the display date to YYYY-MM-DD for consistent Firebase key
-        const displayDate = document.getElementById('booking-date').textContent;
-        const dateParts = displayDate.split(' '); // e.g., "الأربعاء، 12 يوليو 2025"
-        let dateToSave = '';
-        if (dateParts.length > 2) {
-            // Attempt to parse a date like "الأربعاء، 12 يوليو 2025"
-            // This is a basic attempt, robust parsing might need a library or more specific logic
-            try {
-                // Example: "12 يوليو 2025" -> Date object -> "2025-07-12"
-                const tempDateStr = `${dateParts[1]} ${dateParts[2]} ${dateParts[3] || ''}`.trim();
-                const tempDate = new Date(tempDateStr.replace('يوليو', 'July').replace('أغسطس', 'August').replace('سبتمبر', 'September')
-                                        .replace('أكتوبر', 'October').replace('نوفمبر', 'November').replace('ديسمبر', 'December')
-                                        .replace('يناير', 'January').replace('فبراير', 'February').replace('مارس', 'March')
-                                        .replace('أبريل', 'April').replace('مايو', 'May').replace('يونيو', 'June'));
-                if (!isNaN(tempDate.getTime())) {
-                     dateToSave = tempDate.toLocaleDateString('en-CA', { year: 'numeric', month: '2-digit', day: '2-digit' });
-                } else {
-                     dateToSave = document.querySelector('.time-slot-btn').dataset.date; // Fallback to data-date
-                }
-            } catch (e) {
-                dateToSave = document.querySelector('.time-slot-btn').dataset.date; // Fallback to data-date
-            }
-        } else {
-            dateToSave = document.querySelector('.time-slot-btn').dataset.date; // Fallback to data-date
-        }
+        // Get the date to save to Firebase directly from the hidden input (YYYY-MM-DD)
+        const dateToSave = document.getElementById('hidden-formatted-date').value;
 
-
-        // Validate required fields
-        if (!formData.fullName || !formData.phone || !formData.sport || !formData.city || !formData.date || !formData.time) {
+        // Validate required fields (add dateToSave to validation)
+        if (!formData.fullName || !formData.phone || !formData.sport || !formData.city || !dateToSave || !formData.time) {
             alert('يرجى ملء جميع الحقول المطلوبة واختيار موعد.');
             return;
         }
@@ -944,7 +921,7 @@ Ladies, it's time!</p>
                 const bookingData = {
                     sport: formData.sport,
                     city: formData.city,
-                    date: dateToSave, // Use YYYY-MM-DD for consistency in Firebase
+                    date: dateToSave, // Use the reliable YYYY-MM-DD date
                     time: formData.time,
                     price: formData.price,
                     fullName: formData.fullName,
@@ -953,7 +930,6 @@ Ladies, it's time!</p>
                     notes: formData.notes,
                     status: "Pending",
                     timestamp: firebase.database.ServerValue.TIMESTAMP, // Use Firebase server timestamp
-                    // Use the consistent YYYY-MM-DD format for compositeKey
                     compositeKey: `${formData.city}_${formData.sport}_${dateToSave}_${formData.time}`
                 };
                 await db.ref('bookings').push(bookingData); // Use the 'db' object defined globally
@@ -1034,9 +1010,6 @@ Ladies, it's time!</p>
 
     // Initialize default city
     document.querySelector('.city-btn[data-city="بريدة"]').click();
-    // No direct call to generateCalendar or updateTimeSlotAvailability needed here.
-    // The click() will trigger the city selection logic, which in turn calls generateCalendar,
-    // and then the Firebase listener (.on('value')) will handle the availability update automatically.
 </script>
 </body>
 </html>
