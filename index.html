@@ -6,6 +6,31 @@
     <title>هيّا | مجتمع نسائي رياضي في القصيم</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyARaAimHiNzNef6AZ2LKHl0a2V_euo2JYg",
+            authDomain: "booking-haiya.firebaseapp.com",
+            databaseURL: "https://booking-haiya-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "booking-haiya",
+            storageBucket: "booking-haiya.firebasestorage.app",
+            messagingSenderId: "920297070543",
+            appId: "1:920297070543:web:3e216c54a933b493fcfcba",
+            measurementId: "G-57T61BEJWD"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        
+        // Make Firebase functions available globally
+        window.firebaseApp = app;
+        window.firebaseDatabase = database;
+        window.firebasePush = push;
+        window.firebaseRef = ref;
+    </script>
     <script>
         tailwind.config = {
             theme: {
@@ -277,13 +302,7 @@
                     <p id="booking-details" class="text-gray-700">الرياضة: <span id="booking-sport"></span> | المدينة: <span id="booking-city"></span> | التاريخ: <span id="booking-date"></span> | الوقت: <span id="booking-time"></span></p>
                 </div>
                 
-                <form id="booking-form" action="https://formsubmit.co/haiya.saudi@gmail.com" method="POST" class="space-y-6">
-                    <!-- FormSubmit Hidden Fields -->
-                    <input type="hidden" name="_subject" value="حجز جديد - هيّا">
-                    <input type="hidden" name="_template" value="table">
-<input type="hidden" name="_next" value="https://[haiya-ksa].github.io/[haiya]/thanks.html">
-                    <input type="hidden" name="_captcha" value="false">
-                    
+                <form id="booking-form" class="space-y-6">
                     <!-- Hidden Fields for Booking Details -->
                     <input type="hidden" name="الرياضة" id="hidden-sport">
                     <input type="hidden" name="المدينة" id="hidden-city">
@@ -674,16 +693,40 @@ Ladies, it's time!</p>
             timeSlotsContainer.classList.remove('hidden');
         }
 
-        // Booking form submission
+        // Firebase form submission
         document.getElementById('booking-form').addEventListener('submit', function(e) {
-            // Update hidden fields before submission
-            document.getElementById('hidden-sport').value = document.getElementById('booking-sport').textContent;
-            document.getElementById('hidden-city').value = document.getElementById('booking-city').textContent;
+            e.preventDefault();
             
-            // Show success modal (will still submit via FormSubmit)
-            const successMessage = `تم تأكيد حجزك لرياضة ${document.getElementById('booking-sport').textContent}`;
-            document.getElementById('success-message').textContent = successMessage;
-            document.getElementById('success-modal').classList.remove('hidden');
+            // Get form data
+            const formData = {
+                sport: document.getElementById('booking-sport').textContent,
+                city: document.getElementById('booking-city').textContent,
+                date: document.getElementById('booking-date').textContent,
+                time: document.getElementById('booking-time').textContent,
+                price: document.getElementById('booking-price').textContent,
+                fullName: document.getElementById('full-name').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                notes: document.getElementById('notes').value,
+                timestamp: new Date().toISOString()
+            };
+            
+            // Save to Firebase
+            const bookingsRef = window.firebaseRef(window.firebaseDatabase, 'bookings');
+            window.firebasePush(bookingsRef, formData)
+                .then(() => {
+                    // Show success message
+                    const successMessage = `تم تأكيد حجزك لرياضة ${formData.sport}`;
+                    document.getElementById('success-message').textContent = successMessage;
+                    document.getElementById('success-modal').classList.remove('hidden');
+                    
+                    // Reset form
+                    document.getElementById('booking-form').reset();
+                })
+                .catch((error) => {
+                    console.error('Error saving booking:', error);
+                    alert('حدث خطأ أثناء حفظ الحجز. يرجى المحاولة مرة أخرى أو التواصل معنا عبر الواتساب.');
+                });
         });
 
         // Close modal
