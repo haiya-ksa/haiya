@@ -7,10 +7,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase SDK -->
+<!-- Firebase SDK -->
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
     // Your EXACT Firebase Config (verified)
     const firebaseConfig = {
@@ -31,25 +31,11 @@
     // Debugging
     console.log("Firebase connected to:", firebaseConfig.databaseURL);
     
-    // Global access with error handling
-    window.firebaseDB = {
-        pushBooking: async (data) => {
-            try {
-                const bookingsRef = ref(database, 'bookings');
-                const newRef = push(bookingsRef);
-                await set(newRef, {
-                    ...data,
-                    status: "Pending",
-                    timestamp: Date.now(),
-                    compositeKey: `${data.city}_${data.sport}_${data.date}_${data.time}`
-                });
-                return newRef.key; // Return the unique ID
-            } catch (error) {
-                console.error("Firebase write error:", error);
-                throw error;
-            }
-        }
-    };
+    // Make database available globally
+    window.firebaseDatabase = database;
+    window.firebaseRef = ref;
+    window.firebasePush = push;
+    window.firebaseSet = set;
 </script>
     
      <script>
@@ -775,16 +761,22 @@ document.getElementById('booking-form').addEventListener('submit', async functio
     submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
 
     try {
-        // 1. FIRST: Try saving to Firebase
-        let firebaseSuccess = false;
-        try {
-            const bookingsRef = window.firebaseRef(window.firebaseDatabase, 'bookings');
-            await window.firebasePush(bookingsRef, formData);
-            firebaseSuccess = true;
-            console.log("Firebase save successful");
-        } catch (firebaseError) {
-            console.error("Firebase error:", firebaseError);
-        }
+// 1. FIRST: Try saving to Firebase
+let firebaseSuccess = false;
+try {
+    const bookingsRef = window.firebaseRef(window.firebaseDatabase, 'bookings');
+    const newRef = window.firebasePush(bookingsRef);
+    await window.firebaseSet(newRef, {
+        ...formData,
+        status: "Pending",
+        timestamp: new Date().toISOString(),
+        compositeKey: `${formData.city}_${formData.sport}_${formData.date}_${formData.time}`
+    });
+    firebaseSuccess = true;
+    console.log("Firebase save successful");
+} catch (firebaseError) {
+    console.error("Firebase error:", firebaseError);
+}
 
         // 2. SECOND: Try sending email via FormSubmit
         let formSubmitSuccess = false;
