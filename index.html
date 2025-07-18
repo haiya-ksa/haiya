@@ -714,142 +714,136 @@ Ladies, it's time!</p>
         }
 
 // ========== DUAL SUBMISSION HANDLER ==========
-document.getElementById('booking-form').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    // Validate form
-    if (!document.getElementById('terms').checked) {
-        alert('يرجى الموافقة على الشروط والأحكام');
-        return;
-    }
+        document.getElementById('booking-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-    // Prepare form data
-form.addEventListener('submit', (e) => {
-  e.preventDefault();
-
-  const formData = {
-    name: nameInput.value,
-    email: emailInput.value,
-    city: cityInput.value,
-    sport: sportInput.value,
-    date: dateInput.value,
-    time: timeInput.value
-  };
-
-  // Save to Firebase
-  const bookingData = {
-    ...formData,
-    status: "Pending",
-    timestamp: Date.now(),
-    compositeKey: `${formData.city}_${formData.sport}_${formData.date}_${formData.time}`
-  };
-
-  const newRef = db.ref('bookings').push();
-  newRef.set(bookingData);
-});
-
-    // Validate required fields
-    if (!formData.fullName || !formData.phone) {
-        alert('يرجى ملء جميع الحقول المطلوبة');
-        return;
-    }
-
-    // Set loading state
-    const submitBtn = document.querySelector('#booking-form button[type="submit"]');
-    submitBtn.disabled = true;
-    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
-
-    try {
-        // 1. FIRST: Try saving to Firebase
-        let firebaseSuccess = false;
-        try {
-            await window.firebaseDatabase.pushBooking(formData);
-            firebaseSuccess = true;
-            console.log("Firebase save successful");
-        } catch (firebaseError) {
-            console.error("Firebase error:", firebaseError);
-        }
-
-        // 2. SECOND: Try sending email via FormSubmit
-        let formSubmitSuccess = false;
-        try {
-            // Prepare FormSubmit data
-            document.getElementById('hidden-sport').value = formData.sport;
-            document.getElementById('hidden-city').value = formData.city;
-            document.getElementById('hidden-date').value = formData.date;
-            document.getElementById('hidden-time').value = formData.time;
-            document.getElementById('hidden-price').value = formData.price;
-            
-            const form = e.target;
-            const formAction = form.getAttribute('action');
-            const formSubmitResponse = await fetch(formAction, {
-                method: 'POST',
-                body: new FormData(form),
-                headers: { 'Accept': 'application/json' }
-            });
-            
-            if (formSubmitResponse.ok) {
-                formSubmitSuccess = true;
-                console.log("FormSubmit successful");
-            } else {
-                throw new Error('FormSubmit failed');
+            // Validate form
+            if (!document.getElementById('terms').checked) {
+                alert('يرجى الموافقة على الشروط والأحكام');
+                return;
             }
-        } catch (formSubmitError) {
-            console.error("FormSubmit error:", formSubmitError);
-        }
 
-        // 3. Show appropriate message based on results
-        if (firebaseSuccess && formSubmitSuccess) {
-            // Both succeeded
-            document.getElementById('success-message').textContent = 
-                `تم تأكيد حجزك لرياضة ${formData.sport}`;
-            document.getElementById('success-modal').classList.remove('hidden');
-            e.target.reset();
-        } else if (!firebaseSuccess && !formSubmitSuccess) {
-            // Both failed
-            throw new Error('فشل كل من حفظ البيانات وإرسال الإيميل');
-        } else {
-            // Partial success
-            const message = firebaseSuccess 
-                ? 'تم حفظ البيانات ولكن هناك مشكلة في الإرسال. يرجى التواصل عبر الواتساب'
-                : 'تم إرسال الإيميل ولكن هناك مشكلة في حفظ البيانات. يرجى التواصل عبر الواتساب';
-            alert(message);
-            
-            // Still show success if at least one worked
-            if (firebaseSuccess || formSubmitSuccess) {
-                document.getElementById('success-message').textContent = 
-                    `تم تأكيد حجزك لرياضة ${formData.sport}`;
-                document.getElementById('success-modal').classList.remove('hidden');
-                e.target.reset();
+            // Get form data
+            const formData = {
+                sport: document.getElementById('booking-sport').textContent,
+                city: document.getElementById('booking-city').textContent,
+                date: document.getElementById('booking-date').textContent,
+                time: document.getElementById('booking-time').textContent,
+                price: document.getElementById('booking-price').textContent,
+                fullName: document.getElementById('full-name').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value,
+                notes: document.getElementById('notes').value
+            };
+
+            // Validate required fields
+            if (!formData.fullName || !formData.phone || !formData.sport || !formData.city || !formData.date || !formData.time) {
+                alert('يرجى ملء جميع الحقول المطلوبة واختيار موعد.');
+                return;
             }
-        }
-    } catch (error) {
-        console.error('General error:', error);
-        alert('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى أو التواصل عبر الواتساب');
-    } finally {
-        submitBtn.disabled = false;
-        submitBtn.textContent = 'تأكيد الحجز';
-    }
-});
+
+            // Set loading state
+            const submitBtn = document.querySelector('#booking-form button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+
+            try {
+                // 1. FIRST: Try saving to Firebase
+                let firebaseSuccess = false;
+                try {
+                    const bookingData = {
+                        sport: formData.sport,
+                        city: formData.city,
+                        date: formData.date,
+                        time: formData.time,
+                        price: formData.price,
+                        fullName: formData.fullName,
+                        phone: formData.phone,
+                        email: formData.email,
+                        notes: formData.notes,
+                        status: "Pending",
+                        timestamp: firebase.database.ServerValue.TIMESTAMP, // Use Firebase server timestamp
+                        compositeKey: `${formData.city}_${formData.sport}_${formData.date}_${formData.time}` // Unique key for potential future use
+                    };
+                    await db.ref('bookings').push(bookingData); // Use the 'db' object defined globally
+                    firebaseSuccess = true;
+                    console.log("Firebase save successful");
+                } catch (firebaseError) {
+                    console.error("Firebase error:", firebaseError);
+                }
+
+                // 2. SECOND: Try sending email via FormSubmit
+                let formSubmitSuccess = false;
+                try {
+                    // Prepare FormSubmit data using hidden fields
+                    document.getElementById('hidden-sport').value = formData.sport;
+                    document.getElementById('hidden-city').value = formData.city;
+                    document.getElementById('hidden-date').value = formData.date;
+                    document.getElementById('hidden-time').value = formData.time;
+                    document.getElementById('hidden-price').value = formData.price;
+                    document.getElementById('full-name').value = formData.fullName; // Ensure these are set for FormSubmit to pick up
+                    document.getElementById('phone').value = formData.phone;
+                    document.getElementById('email').value = formData.email;
+                    document.getElementById('notes').value = formData.notes;
+
+                    const form = e.target;
+                    const formAction = form.getAttribute('action');
+                    const formSubmitResponse = await fetch(formAction, {
+                        method: 'POST',
+                        body: new FormData(form),
+                        headers: { 'Accept': 'application/json' }
+                    });
+
+                    if (formSubmitResponse.ok) {
+                        formSubmitSuccess = true;
+                        console.log("FormSubmit successful");
+                    } else {
+                        throw new Error(`FormSubmit failed with status: ${formSubmitResponse.status}`);
+                    }
+                } catch (formSubmitError) {
+                    console.error("FormSubmit error:", formSubmitError);
+                }
+
+                // 3. Show appropriate message based on results
+                if (firebaseSuccess && formSubmitSuccess) {
+                    // Both succeeded
+                    document.getElementById('success-message').textContent =
+                        `تم تأكيد حجزك لرياضة ${formData.sport} في ${formData.city} بتاريخ ${formData.date} في ${formData.time}`;
+                    document.getElementById('success-modal').classList.remove('hidden');
+                    e.target.reset(); // Clear the form
+                } else if (!firebaseSuccess && !formSubmitSuccess) {
+                    // Both failed
+                    alert('فشل في إتمام الحجز (فشل حفظ البيانات وإرسال الإيميل). يرجى التواصل عبر الواتساب.');
+                } else {
+                    // Partial success
+                    const message = firebaseSuccess
+                        ? 'تم حفظ بيانات حجزك ولكن هناك مشكلة في إرسال الإيميل. يرجى إرسال إثبات التحويل عبر الواتساب لتأكيد موعدك.'
+                        : 'تم إرسال الإيميل الخاص بحجزك ولكن هناك مشكلة في حفظ البيانات. يرجى التواصل عبر الواتساب للتأكيد.';
+                    alert(message);
+
+                    // Still show success modal if at least one operation worked
+                    document.getElementById('success-message').textContent =
+                        `تم تأكيد حجزك لرياضة ${formData.sport} في ${formData.city} بتاريخ ${formData.date} في ${formData.time}. يرجى مراجعة الملاحظة أعلاه.`;
+                    document.getElementById('success-modal').classList.remove('hidden');
+                    e.target.reset(); // Clear the form
+                }
+            } catch (error) {
+                console.error('General error during booking:', error);
+                alert('حدث خطأ غير متوقع أثناء إتمام الحجز. يرجى المحاولة مرة أخرى أو التواصل عبر الواتساب.');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'تأكيد الحجز';
+            }
+        });
+
         // Close modal
         document.getElementById('close-modal').addEventListener('click', function() {
             document.getElementById('success-modal').classList.add('hidden');
         });
-        
-// Add this anywhere in your script
-function testFirebaseConnection() {
-    const testRef = window.firebaseRef(window.firebaseDatabase, 'connection_test');
-    window.firebasePush(testRef, {
-        test: "connection",
-        timestamp: new Date().toISOString()
-    })
-    .then(() => console.log("Firebase test successful!"))
-    .catch(e => console.error("Firebase test failed:", e));
-}
 
-// Run test on page load
-setTimeout(testFirebaseConnection, 3000);
-        
+        // Removed the testFirebaseConnection as it was using deprecated methods and causing confusion.
+        // The main booking logic now correctly uses the 'db' object.
+
         // Initialize default city
         document.querySelector('.city-btn[data-city="بريدة"]').click();
     </script>
