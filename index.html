@@ -7,26 +7,26 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-<!-- Firebase SDK v8 (compatible with GitHub Pages) -->
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyARaAimHiNzNef6AZ2LKHl0a2V_euo2JYg",
-    authDomain: "booking-haiya.firebaseapp.com",
-    databaseURL: "https://booking-haiya-default-rtdb.europe-west1.firebasedatabase.app",
-    projectId: "booking-haiya",
-    storageBucket: "booking-haiya.appspot.com",
-    messagingSenderId: "920297070543",
-    appId: "1:920297070543:web:3e216c54a933b493fcfcba",
-    measurementId: "G-57T61BEJWD"
-  };
+    <!-- Firebase SDK v8 (compatible with GitHub Pages) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyARaAimHiNzNef6AZ2LKHl0a2V_euo2JYg",
+            authDomain: "booking-haiya.firebaseapp.com",
+            databaseURL: "https://booking-haiya-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "booking-haiya",
+            storageBucket: "booking-haiya.appspot.com",
+            messagingSenderId: "920297070543",
+            appId: "1:920297070543:web:3e216c54a933b493fcfcba",
+            measurementId: "G-57T61BEJWD"
+        };
 
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.database();
-</script>
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+    </script>
     
-     <script>
+    <script>
         tailwind.config = {
             theme: {
                 extend: {
@@ -110,6 +110,15 @@
         #success-modal.hidden > div {
             transform: translateY(-20px);
         }
+        
+        .loading-spinner {
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-primary-light text-primary-dark">
@@ -129,14 +138,6 @@
                 <i class="fas fa-bars text-2xl"></i>
             </button>
         </div>
-        <div class="md:hidden hidden bg-primary-dark px-4 py-2" id="mobile-menu">
-            <a href="#home" class="block py-2 hover:text-primary-pink transition">الرئيسية</a>
-            <a href="#activities" class="block py-2 hover:text-primary-pink transition">الأنشطة</a>
-            <a href="#booking" class="block py-2 hover:text-primary-pink transition">الحجز</a>
-            <a href="#contact" class="block py-2 hover:text-primary-pink transition">تواصل معنا</a>
-        </div>
-    </nav>
-        <!-- Mobile menu -->
         <div class="md:hidden hidden bg-primary-dark px-4 py-2" id="mobile-menu">
             <a href="#home" class="block py-2 hover:text-primary-pink transition">الرئيسية</a>
             <a href="#activities" class="block py-2 hover:text-primary-pink transition">الأنشطة</a>
@@ -329,6 +330,8 @@
                     <input type="hidden" name="التاريخ" id="hidden-date">
                     <input type="hidden" name="الوقت" id="hidden-time">
                     <input type="hidden" name="السعر" id="hidden-price">
+                    <input type="hidden" id="hidden-date-iso">
+                    <input type="hidden" id="hidden-time-slot-id">
                     
                     <div>
                         <label for="full-name" class="block text-lg font-medium mb-2">الاسم الكامل</label>
@@ -414,7 +417,6 @@
             <div class="flex flex-col md:flex-row justify-between items-center">
                 <div class="mb-6 md:mb-0">
                     <div class="flex items-center space-x-2">
-                        <!-- Logo in footer - replace src with your actual logo path -->
                         <img src="logo.png" alt="هيّا" class="logo-img">
                     </div>
                     <p class="mt-2 text-gray-300">صُنع بعد سنين من الانتظار، لجعل الرياضة متاحة لجميع النساء
@@ -459,38 +461,38 @@ Ladies, it's time!</p>
                 "كرة السلة": {
                     availableDays: [0, 2, 4], // Sunday, Tuesday, Thursday
                     timeSlots: [
-                        { time: '4:00 مساءً', available: 5, max: 10, price: 75 },
-                        { time: '6:00 مساءً', available: 8, max: 10, price: 75 }
+                        { id: 'basketball-4pm', time: '4:00 مساءً', max: 10, price: 75 },
+                        { id: 'basketball-6pm', time: '6:00 مساءً', max: 10, price: 75 }
                     ]
                 },
                 "تنس الريشة": {
                     availableDays: [1, 3], // Monday, Wednesday
                     timeSlots: [
-                        { time: '5:00 مساءً', available: 4, max: 8, price: 60 }
+                        { id: 'badminton-5pm', time: '5:00 مساءً', max: 8, price: 60 }
                     ]
                 },
                 "كرة القدم": {
                     availableDays: [0, 3, 5], // Sunday, Wednesday, Friday
                     timeSlots: [
-                        { time: '5:30 مساءً', available: 7, max: 12, price: 80 }
+                        { id: 'football-530pm', time: '5:30 مساءً', max: 12, price: 80 }
                     ]
                 },
                 "كرة الطائرة": {
                     availableDays: [1, 4], // Monday, Thursday
                     timeSlots: [
-                        { time: '4:00 مساءً', available: 6, max: 12, price: 70 }
+                        { id: 'volleyball-4pm', time: '4:00 مساءً', max: 12, price: 70 }
                     ]
                 },
                 "التنس": {
                     availableDays: [2, 5], // Tuesday, Friday
                     timeSlots: [
-                        { time: '3:30 مساءً', available: 2, max: 4, price: 90 }
+                        { id: 'tennis-330pm', time: '3:30 مساءً', max: 4, price: 90 }
                     ]
                 },
                 "السهام": {
                     availableDays: [0, 3], // Sunday, Wednesday
                     timeSlots: [
-                        { time: '4:00 مساءً', available: 3, max: 6, price: 65 }
+                        { id: 'archery-4pm', time: '4:00 مساءً', max: 6, price: 65 }
                     ]
                 }
             },
@@ -498,13 +500,13 @@ Ladies, it's time!</p>
                 "كرة السلة": {
                     availableDays: [1, 3], // Monday, Wednesday
                     timeSlots: [
-                        { time: '5:00 مساءً', available: 4, max: 8, price: 75 }
+                        { id: 'basketball-5pm', time: '5:00 مساءً', max: 8, price: 75 }
                     ]
                 },
                 "كرة القدم": {
                     availableDays: [0, 4], // Sunday, Thursday
                     timeSlots: [
-                        { time: '6:00 مساءً', available: 6, max: 10, price: 80 }
+                        { id: 'football-6pm', time: '6:00 مساءً', max: 10, price: 80 }
                     ]
                 }
             },
@@ -512,7 +514,7 @@ Ladies, it's time!</p>
                 "كرة السلة": {
                     availableDays: [2, 5], // Tuesday, Friday
                     timeSlots: [
-                        { time: '4:30 مساءً', available: 5, max: 8, price: 75 }
+                        { id: 'basketball-430pm', time: '4:30 مساءً', max: 8, price: 75 }
                     ]
                 }
             },
@@ -520,11 +522,18 @@ Ladies, it's time!</p>
                 "كرة القدم": {
                     availableDays: [1, 4], // Monday, Thursday
                     timeSlots: [
-                        { time: '5:00 مساءً', available: 5, max: 10, price: 80 }
+                        { id: 'football-5pm', time: '5:00 مساءً', max: 10, price: 80 }
                     ]
                 }
             }
         };
+
+        // Global variables
+        let selectedCity = 'بريدة';
+        let selectedSport = '';
+        let selectedDate = null;
+        let selectedTimeSlotId = '';
+        let availabilityRefs = {};
 
         // Mobile menu toggle
         document.getElementById('mobile-menu-button').addEventListener('click', function() {
@@ -549,7 +558,6 @@ Ladies, it's time!</p>
 
         // City selection
         const cityButtons = document.querySelectorAll('.city-btn');
-        let selectedCity = 'بريدة'; // Default city
         
         cityButtons.forEach(button => {
             button.addEventListener('click', function() {
@@ -561,6 +569,7 @@ Ladies, it's time!</p>
                 this.classList.add('bg-primary-dark', 'text-white', 'hover:bg-opacity-90');
                 selectedCity = this.dataset.city;
                 document.getElementById('city-name').textContent = selectedCity;
+                document.getElementById('booking-city').textContent = selectedCity;
             });
         });
 
@@ -585,7 +594,6 @@ Ladies, it's time!</p>
 
         // View calendar for a sport
         const viewCalendarButtons = document.querySelectorAll('.view-calendar-btn');
-        let selectedSport = '';
         
         viewCalendarButtons.forEach(button => {
             button.addEventListener('click', function() {
@@ -594,6 +602,8 @@ Ladies, it's time!</p>
                 document.getElementById('city-name').textContent = selectedCity;
                 document.getElementById('booking-sport').textContent = selectedSport;
                 document.getElementById('booking-city').textContent = selectedCity;
+                document.getElementById('hidden-sport').value = selectedSport;
+                document.getElementById('hidden-city').value = selectedCity;
                 
                 document.getElementById('calendar-section').classList.remove('hidden');
                 document.getElementById('time-slots-container').classList.add('hidden');
@@ -654,6 +664,7 @@ Ladies, it's time!</p>
                             day.classList.remove('active-day');
                         });
                         this.classList.add('active-day');
+                        selectedDate = dayDate;
                         showTimeSlots(dayDate, sportSchedule.timeSlots);
                     });
                 }
@@ -663,7 +674,7 @@ Ladies, it's time!</p>
         }
 
         // Show time slots for a selected day
-        function showTimeSlots(date, slots) {
+        async function showTimeSlots(date, slots) {
             const timeSlotsContainer = document.getElementById('time-slots-container');
             const timeSlots = document.getElementById('time-slots');
             const selectedDateElement = document.getElementById('selected-date').querySelector('span');
@@ -674,46 +685,84 @@ Ladies, it's time!</p>
             document.getElementById('booking-date').textContent = formattedDate;
             document.getElementById('hidden-date').value = formattedDate;
             
+            // Store ISO date for Firebase
+            const isoDate = date.toISOString().split('T')[0];
+            document.getElementById('hidden-date-iso').value = isoDate;
+            
             timeSlots.innerHTML = '';
             
-            (slots || []).forEach(slot => {
-                const slotElement = document.createElement('div');
-                const isFull = slot.available === 0;
-                const isAlmostFull = slot.available <= 2 && slot.available > 0;
+            // Show loading indicator
+            timeSlots.innerHTML = '<div class="col-span-3 text-center py-8"><i class="fas fa-spinner fa-spin text-2xl text-primary-pink"></i><p class="mt-2">جاري تحميل المواعيد...</p></div>';
+            
+            try {
+                // Clear previous listeners
+                Object.values(availabilityRefs).forEach(ref => ref.off('value'));
+                availabilityRefs = {};
                 
-                slotElement.className = 'bg-white rounded-lg p-4 border border-gray-200';
-                slotElement.innerHTML = `
-                    <div class="flex justify-between items-center mb-2">
-                        <span class="font-bold">${slot.time}</span>
-                        <span class="text-sm ${isFull ? 'text-red-500' : isAlmostFull ? 'text-yellow-500' : 'text-green-500'}">
-                            ${isFull ? 'اكتمل' : `متاح (${slot.available}/${slot.max})`}
-                        </span>
-                    </div>
-                    <div class="text-sm text-gray-600 mb-2">السعر: ${slot.price} ريال</div>
-                    <button class="w-full mt-2 py-2 rounded-lg ${
-                        isFull ? 'bg-gray-200 cursor-not-allowed' : 'bg-primary-pink hover:bg-opacity-90 text-white'
-                    } transition" ${isFull ? 'disabled' : ''}>
-                        ${isFull ? 'اكتمل العدد' : 'اختيار هذا الموعد'}
-                    </button>
-                `;
-                
-                if (!isFull) {
-                    slotElement.querySelector('button').addEventListener('click', function() {
-                        document.getElementById('booking-time').textContent = slot.time;
-                        document.getElementById('booking-price').textContent = `${slot.price} ريال`;
-                        document.getElementById('hidden-time').value = slot.time;
-                        document.getElementById('hidden-price').value = `${slot.price} ريال`;
-                        document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
+                // Process each time slot
+                for (const slot of slots) {
+                    const slotRef = db.ref(`availability/${selectedCity}/${selectedSport}/${isoDate}/${slot.id}`);
+                    availabilityRefs[slot.id] = slotRef;
+                    
+                    // Listen for real-time updates
+                    slotRef.on('value', (snapshot) => {
+                        updateTimeSlotDisplay(slot, snapshot.val());
                     });
                 }
-                
-                timeSlots.appendChild(slotElement);
-            });
+            } catch (error) {
+                console.error('Error fetching availability:', error);
+                timeSlots.innerHTML = '<div class="col-span-3 text-center py-8 text-red-500">حدث خطأ في تحميل المواعيد. يرجى المحاولة مرة أخرى.</div>';
+            }
             
             timeSlotsContainer.classList.remove('hidden');
         }
+        
+        // Update time slot display with real-time data
+        function updateTimeSlotDisplay(slot, availabilityData) {
+            const booked = availabilityData ? availabilityData.booked || 0 : 0;
+            const max = slot.max;
+            const available = max - booked;
+            const isFull = available === 0;
+            const isAlmostFull = available <= 2 && available > 0;
+            
+            // Find existing slot element or create a new one
+            let slotElement = document.getElementById(`slot-${slot.id}`);
+            if (!slotElement) {
+                slotElement = document.createElement('div');
+                slotElement.id = `slot-${slot.id}`;
+                slotElement.className = 'bg-white rounded-lg p-4 border border-gray-200';
+                document.getElementById('time-slots').appendChild(slotElement);
+            }
+            
+            slotElement.innerHTML = `
+                <div class="flex justify-between items-center mb-2">
+                    <span class="font-bold">${slot.time}</span>
+                    <span class="text-sm ${isFull ? 'text-red-500' : isAlmostFull ? 'text-yellow-500' : 'text-green-500'}">
+                        ${isFull ? 'اكتمل' : `متاح (${available}/${max})`}
+                    </span>
+                </div>
+                <div class="text-sm text-gray-600 mb-2">السعر: ${slot.price} ريال</div>
+                <button class="w-full mt-2 py-2 rounded-lg ${
+                    isFull ? 'bg-gray-200 cursor-not-allowed' : 'bg-primary-pink hover:bg-opacity-90 text-white'
+                } transition" ${isFull ? 'disabled' : ''}>
+                    ${isFull ? 'اكتمل العدد' : 'اختيار هذا الموعد'}
+                </button>
+            `;
+            
+            if (!isFull) {
+                slotElement.querySelector('button').addEventListener('click', function() {
+                    document.getElementById('booking-time').textContent = slot.time;
+                    document.getElementById('booking-price').textContent = `${slot.price} ريال`;
+                    document.getElementById('hidden-time').value = slot.time;
+                    document.getElementById('hidden-price').value = `${slot.price} ريال`;
+                    document.getElementById('hidden-time-slot-id').value = slot.id;
+                    selectedTimeSlotId = slot.id;
+                    document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
+                });
+            }
+        }
 
-// ========== DUAL SUBMISSION HANDLER ==========
+        // ========== DUAL SUBMISSION HANDLER WITH AVAILABILITY UPDATE ==========
         document.getElementById('booking-form').addEventListener('submit', async function(e) {
             e.preventDefault();
 
@@ -733,12 +782,20 @@ Ladies, it's time!</p>
                 fullName: document.getElementById('full-name').value,
                 phone: document.getElementById('phone').value,
                 email: document.getElementById('email').value,
-                notes: document.getElementById('notes').value
+                notes: document.getElementById('notes').value,
+                isoDate: document.getElementById('hidden-date-iso').value,
+                timeSlotId: document.getElementById('hidden-time-slot-id').value
             };
 
             // Validate required fields
             if (!formData.fullName || !formData.phone || !formData.sport || !formData.city || !formData.date || !formData.time) {
                 alert('يرجى ملء جميع الحقول المطلوبة واختيار موعد.');
+                return;
+            }
+
+            // Validate time slot selection
+            if (!formData.timeSlotId) {
+                alert('يرجى اختيار موعد صالح.');
                 return;
             }
 
@@ -748,44 +805,51 @@ Ladies, it's time!</p>
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
 
             try {
-                // 1. FIRST: Try saving to Firebase
-                let firebaseSuccess = false;
-                try {
-                    const bookingData = {
-                        sport: formData.sport,
-                        city: formData.city,
-                        date: formData.date,
-                        time: formData.time,
-                        price: formData.price,
-                        fullName: formData.fullName,
-                        phone: formData.phone,
-                        email: formData.email,
-                        notes: formData.notes,
-                        status: "Pending",
-                        timestamp: firebase.database.ServerValue.TIMESTAMP, // Use Firebase server timestamp
-                        compositeKey: `${formData.city}_${formData.sport}_${formData.date}_${formData.time}` // Unique key for potential future use
+                // 1. Update availability in Firebase
+                const availabilityRef = db.ref(`availability/${formData.city}/${formData.sport}/${formData.isoDate}/${formData.timeSlotId}`);
+                
+                // Use a transaction to safely update the booked count
+                await availabilityRef.transaction((currentData) => {
+                    if (currentData === null) {
+                        // Initialize if it doesn't exist
+                        return { 
+                            booked: 1,
+                            max: getMaxCapacity(formData.city, formData.sport, formData.timeSlotId) 
+                        };
+                    }
+                    
+                    // Check if slot is full
+                    if (currentData.booked >= currentData.max) {
+                        throw new Error('هذا الموعد لم يعد متاحاً. يرجى اختيار موعد آخر.');
+                    }
+                    
+                    // Increment booked count
+                    return {
+                        ...currentData,
+                        booked: currentData.booked + 1
                     };
-                    await db.ref('bookings').push(bookingData); // Use the 'db' object defined globally
-                    firebaseSuccess = true;
-                    console.log("Firebase save successful");
-                } catch (firebaseError) {
-                    console.error("Firebase error:", firebaseError);
-                }
-
-                // 2. SECOND: Try sending email via FormSubmit
-                let formSubmitSuccess = false;
+                });
+                
+                // 2. Save booking to Firebase
+                const bookingData = {
+                    sport: formData.sport,
+                    city: formData.city,
+                    date: formData.date,
+                    time: formData.time,
+                    price: formData.price,
+                    fullName: formData.fullName,
+                    phone: formData.phone,
+                    email: formData.email,
+                    notes: formData.notes,
+                    status: "Pending",
+                    timestamp: firebase.database.ServerValue.TIMESTAMP,
+                    compositeKey: `${formData.city}_${formData.sport}_${formData.isoDate}_${formData.timeSlotId}`
+                };
+                
+                await db.ref('bookings').push(bookingData);
+                
+                // 3. Send email via FormSubmit
                 try {
-                    // Prepare FormSubmit data using hidden fields
-                    document.getElementById('hidden-sport').value = formData.sport;
-                    document.getElementById('hidden-city').value = formData.city;
-                    document.getElementById('hidden-date').value = formData.date;
-                    document.getElementById('hidden-time').value = formData.time;
-                    document.getElementById('hidden-price').value = formData.price;
-                    document.getElementById('full-name').value = formData.fullName; // Ensure these are set for FormSubmit to pick up
-                    document.getElementById('phone').value = formData.phone;
-                    document.getElementById('email').value = formData.email;
-                    document.getElementById('notes').value = formData.notes;
-
                     const form = e.target;
                     const formAction = form.getAttribute('action');
                     const formSubmitResponse = await fetch(formAction, {
@@ -794,55 +858,41 @@ Ladies, it's time!</p>
                         headers: { 'Accept': 'application/json' }
                     });
 
-                    if (formSubmitResponse.ok) {
-                        formSubmitSuccess = true;
-                        console.log("FormSubmit successful");
-                    } else {
+                    if (!formSubmitResponse.ok) {
                         throw new Error(`FormSubmit failed with status: ${formSubmitResponse.status}`);
                     }
                 } catch (formSubmitError) {
                     console.error("FormSubmit error:", formSubmitError);
                 }
 
-                // 3. Show appropriate message based on results
-                if (firebaseSuccess && formSubmitSuccess) {
-                    // Both succeeded
-                    document.getElementById('success-message').textContent =
-                        `تم تأكيد حجزك لرياضة ${formData.sport} في ${formData.city} بتاريخ ${formData.date} في ${formData.time}`;
-                    document.getElementById('success-modal').classList.remove('hidden');
-                    e.target.reset(); // Clear the form
-                } else if (!firebaseSuccess && !formSubmitSuccess) {
-                    // Both failed
-                    alert('فشل في إتمام الحجز (فشل حفظ البيانات وإرسال الإيميل). يرجى التواصل عبر الواتساب.');
-                } else {
-                    // Partial success
-                    const message = firebaseSuccess
-                        ? 'تم حفظ بيانات حجزك ولكن هناك مشكلة في إرسال الإيميل. يرجى إرسال إثبات التحويل عبر الواتساب لتأكيد موعدك.'
-                        : 'تم إرسال الإيميل الخاص بحجزك ولكن هناك مشكلة في حفظ البيانات. يرجى التواصل عبر الواتساب للتأكيد.';
-                    alert(message);
-
-                    // Still show success modal if at least one operation worked
-                    document.getElementById('success-message').textContent =
-                        `تم تأكيد حجزك لرياضة ${formData.sport} في ${formData.city} بتاريخ ${formData.date} في ${formData.time}. يرجى مراجعة الملاحظة أعلاه.`;
-                    document.getElementById('success-modal').classList.remove('hidden');
-                    e.target.reset(); // Clear the form
-                }
+                // Show success message
+                document.getElementById('success-message').textContent =
+                    `تم تأكيد حجزك لرياضة ${formData.sport} في ${formData.city} بتاريخ ${formData.date} في ${formData.time}`;
+                document.getElementById('success-modal').classList.remove('hidden');
+                e.target.reset(); // Clear the form
+                
             } catch (error) {
-                console.error('General error during booking:', error);
-                alert('حدث خطأ غير متوقع أثناء إتمام الحجز. يرجى المحاولة مرة أخرى أو التواصل عبر الواتساب.');
+                console.error('Booking error:', error);
+                alert(`حدث خطأ: ${error.message || 'يرجى المحاولة مرة أخرى أو التواصل عبر الواتساب.'}`);
             } finally {
                 submitBtn.disabled = false;
-                submitBtn.textContent = 'تأكيد الحجز';
+                submitBtn.innerHTML = 'تأكيد الحجز';
             }
         });
+
+        // Helper function to get max capacity for a time slot
+        function getMaxCapacity(city, sport, timeSlotId) {
+            const sportSchedule = citySchedules[city]?.[sport];
+            if (!sportSchedule) return 0;
+            
+            const slot = sportSchedule.timeSlots.find(s => s.id === timeSlotId);
+            return slot ? slot.max : 0;
+        }
 
         // Close modal
         document.getElementById('close-modal').addEventListener('click', function() {
             document.getElementById('success-modal').classList.add('hidden');
         });
-
-        // Removed the testFirebaseConnection as it was using deprecated methods and causing confusion.
-        // The main booking logic now correctly uses the 'db' object.
 
         // Initialize default city
         document.querySelector('.city-btn[data-city="بريدة"]').click();
