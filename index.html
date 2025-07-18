@@ -446,6 +446,41 @@ Ladies, it's time!</p>
         </div>
     </div>
 
+    // Check available slots for a specific time
+async function getAvailableSlots(city, sport, date, time) {
+    const bookingsRef = ref(db, 'bookings');
+    const bookingQuery = query(
+        bookingsRef,
+        orderByChild('compositeKey'),
+        equalTo(`${city}_${sport}_${date}_${time}`)
+    );
+    
+    const snapshot = await new Promise(resolve => 
+        onValue(bookingQuery, resolve, { onlyOnce: true })
+    );
+    
+    const bookings = snapshot.val() || {};
+    const baseSlot = baseAvailability[city]?.[sport]?.timeSlots?.find(s => s.time === time);
+    return baseSlot ? Math.max(0, baseSlot.max - Object.keys(bookings).length) : 0;
+}
+
+// Save booking to Firebase
+async function saveBooking(bookingData) {
+    try {
+        const bookingsRef = ref(db, 'bookings');
+        const newBookingRef = push(bookingsRef);
+        await set(newBookingRef, {
+            ...bookingData,
+            timestamp: Date.now()
+        });
+        return true;
+    } catch (error) {
+        console.error("Error saving booking:", error);
+        return false;
+    }
+}
+
+
     <!-- Firebase and App Scripts -->
     <script type="module">
         // Firebase imports
