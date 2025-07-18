@@ -8,28 +8,33 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <!-- Firebase SDK -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-        
-        const firebaseConfig = {
-            apiKey: "AIzaSyARaAimHiNzNef6AZ2LKHl0a2V_euo2JYg",
-            authDomain: "booking-haiya.firebaseapp.com",
-            databaseURL: "https://booking-haiya-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "booking-haiya",
-            storageBucket: "booking-haiya.firebasestorage.app",
-            messagingSenderId: "920297070543",
-            appId: "1:920297070543:web:3e216c54a933b493fcfcba",
-            measurementId: "G-57T61BEJWD"
-        };
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+    
+    const firebaseConfig = {
+        apiKey: "AIzaSyARaAimHiNzNef6AZ2LKHl0a2V_euo2JYg",
+        authDomain: "booking-haiya.firebaseapp.com",
+        databaseURL: "https://booking-haiya-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "booking-haiya",
+        storageBucket: "booking-haiya.firebasestorage.app",
+        messagingSenderId: "920297070543",
+        appId: "1:920297070543:web:3e216c54a933b493fcfcba",
+        measurementId: "G-57T61BEJWD"
+    };
 
-        const app = initializeApp(firebaseConfig);
-        const database = getDatabase(app);
-        
-        window.firebaseDatabase = database;
-        window.firebaseRef = ref;
-        window.firebasePush = push;
-    </script>
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const database = getDatabase(app);
+    
+    // Make available globally
+    window.firebaseDatabase = database;
+    window.firebaseRef = ref;
+    window.firebasePush = push;
+
+    // Test connection
+    console.log("Firebase initialized:", app.name);
+</script>
     
      <script>
         tailwind.config = {
@@ -719,83 +724,113 @@ Ladies, it's time!</p>
         }
 
         // ========== DUAL SUBMISSION HANDLER ==========
-        document.getElementById('booking-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
+document.getElementById('booking-form').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    // Validate form
+    if (!document.getElementById('terms').checked) {
+        alert('يرجى الموافقة على الشروط والأحكام');
+        return;
+    }
+
+    // Prepare form data
+    const formData = {
+        sport: document.getElementById('booking-sport').textContent,
+        city: document.getElementById('booking-city').textContent,
+        date: document.getElementById('booking-date').textContent,
+        time: document.getElementById('booking-time').textContent,
+        price: document.getElementById('booking-price').textContent,
+        fullName: document.getElementById('full-name').value,
+        phone: document.getElementById('phone').value,
+        email: document.getElementById('email').value || 'لم يتم تقديمه',
+        notes: document.getElementById('notes').value || 'لا يوجد',
+        timestamp: new Date().toISOString()
+    };
+
+    // Validate required fields
+    if (!formData.fullName || !formData.phone) {
+        alert('يرجى ملء جميع الحقول المطلوبة');
+        return;
+    }
+
+    // Set loading state
+    const submitBtn = document.querySelector('#booking-form button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
+
+    try {
+        // 1. FIRST: Try saving to Firebase
+        let firebaseSuccess = false;
+        try {
+            const bookingsRef = window.firebaseRef(window.firebaseDatabase, 'bookings');
+            await window.firebasePush(bookingsRef, formData);
+            firebaseSuccess = true;
+            console.log("Firebase save successful");
+        } catch (firebaseError) {
+            console.error("Firebase error:", firebaseError);
+        }
+
+        // 2. SECOND: Try sending email via FormSubmit
+        let formSubmitSuccess = false;
+        try {
+            // Prepare FormSubmit data
+            document.getElementById('hidden-sport').value = formData.sport;
+            document.getElementById('hidden-city').value = formData.city;
+            document.getElementById('hidden-date').value = formData.date;
+            document.getElementById('hidden-time').value = formData.time;
+            document.getElementById('hidden-price').value = formData.price;
             
-            // Validate form
-            if (!document.getElementById('terms').checked) {
-                alert('يرجى الموافقة على الشروط والأحكام');
-                return;
+            const form = e.target;
+            const formAction = form.getAttribute('action');
+            const formSubmitResponse = await fetch(formAction, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: { 'Accept': 'application/json' }
+            });
+            
+            if (formSubmitResponse.ok) {
+                formSubmitSuccess = true;
+                console.log("FormSubmit successful");
+            } else {
+                throw new Error('FormSubmit failed');
             }
+        } catch (formSubmitError) {
+            console.error("FormSubmit error:", formSubmitError);
+        }
 
-            // Prepare form data
-            const formData = {
-                sport: document.getElementById('booking-sport').textContent,
-                city: document.getElementById('booking-city').textContent,
-                date: document.getElementById('booking-date').textContent,
-                time: document.getElementById('booking-time').textContent,
-                price: document.getElementById('booking-price').textContent,
-                fullName: document.getElementById('full-name').value,
-                phone: document.getElementById('phone').value,
-                email: document.getElementById('email').value || 'لم يتم تقديمه',
-                notes: document.getElementById('notes').value || 'لا يوجد',
-                timestamp: new Date().toISOString()
-            };
-
-            // Validate required fields
-            if (!formData.fullName || !formData.phone) {
-                alert('يرجى ملء جميع الحقول المطلوبة');
-                return;
-            }
-
-            // Set loading state
-            const submitBtn = document.querySelector('#booking-form button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
-
-            try {
-                // 1. Save to Firebase
-                const bookingsRef = window.firebaseRef(window.firebaseDatabase, 'bookings');
-                await window.firebasePush(bookingsRef, formData);
-                
-                // 2. Prepare FormSubmit data
-                document.getElementById('hidden-sport').value = formData.sport;
-                document.getElementById('hidden-city').value = formData.city;
-                document.getElementById('hidden-date').value = formData.date;
-                document.getElementById('hidden-time').value = formData.time;
-                document.getElementById('hidden-price').value = formData.price;
-                
-                // 3. Submit to FormSubmit
-                const form = e.target;
-                const formAction = form.getAttribute('action');
-                const formSubmitResponse = await fetch(formAction, {
-                    method: 'POST',
-                    body: new FormData(form),
-                    headers: { 'Accept': 'application/json' }
-                });
-                
-                if (!formSubmitResponse.ok) throw new Error('FormSubmit failed');
-
-                // Show success
+        // 3. Show appropriate message based on results
+        if (firebaseSuccess && formSubmitSuccess) {
+            // Both succeeded
+            document.getElementById('success-message').textContent = 
+                `تم تأكيد حجزك لرياضة ${formData.sport}`;
+            document.getElementById('success-modal').classList.remove('hidden');
+            e.target.reset();
+        } else if (!firebaseSuccess && !formSubmitSuccess) {
+            // Both failed
+            throw new Error('فشل كل من حفظ البيانات وإرسال الإيميل');
+        } else {
+            // Partial success
+            const message = firebaseSuccess 
+                ? 'تم حفظ البيانات ولكن هناك مشكلة في الإرسال. يرجى التواصل عبر الواتساب'
+                : 'تم إرسال الإيميل ولكن هناك مشكلة في حفظ البيانات. يرجى التواصل عبر الواتساب';
+            alert(message);
+            
+            // Still show success if at least one worked
+            if (firebaseSuccess || formSubmitSuccess) {
                 document.getElementById('success-message').textContent = 
                     `تم تأكيد حجزك لرياضة ${formData.sport}`;
                 document.getElementById('success-modal').classList.remove('hidden');
-                form.reset();
-                
-            } catch (error) {
-                console.error('Error:', error);
-                
-                if (error.message.includes('Firebase')) {
-                    alert('تم إرسال الإيميل ولكن هناك مشكلة في حفظ البيانات. يرجى التواصل عبر الواتساب');
-                } else {
-                    alert('تم حفظ البيانات ولكن هناك مشكلة في الإرسال. يرجى التواصل عبر الواتساب');
-                }
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'تأكيد الحجز';
+                e.target.reset();
             }
-        });
-
+        }
+    } catch (error) {
+        console.error('General error:', error);
+        alert('حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى أو التواصل عبر الواتساب');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'تأكيد الحجز';
+    }
+});
         // Close modal
         document.getElementById('close-modal').addEventListener('click', function() {
             document.getElementById('success-modal').classList.add('hidden');
