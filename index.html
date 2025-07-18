@@ -11,7 +11,8 @@
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-    
+
+    // Your Firebase Config 
     const firebaseConfig = {
         apiKey: "AIzaSyARaAimHiNzNef6AZ2LKHl0a2V_euo2JYg",
         authDomain: "booking-haiya.firebaseapp.com",
@@ -26,14 +27,26 @@
     // Initialize Firebase
     const app = initializeApp(firebaseConfig);
     const database = getDatabase(app);
-    
-    // Make available globally
+
+    // Debugging
+    console.log("Firebase initialized successfully!");
+    console.log("Database URL:", firebaseConfig.databaseURL);
+
+    // Make available globally with error handling
     window.firebaseDatabase = database;
     window.firebaseRef = ref;
-    window.firebasePush = push;
-
-    // Test connection
-    console.log("Firebase initialized:", app.name);
+    window.firebasePush = (ref, data) => {
+        console.log("Attempting to push data:", data);
+        return push(ref, data)
+            .then((result) => {
+                console.log("Firebase write successful!", result);
+                return result;
+            })
+            .catch((error) => {
+                console.error("Firebase write error:", error);
+                throw error;
+            });
+    };
 </script>
     
      <script>
@@ -760,15 +773,12 @@ document.getElementById('booking-form').addEventListener('submit', async functio
 
     try {
         // 1. FIRST: Try saving to Firebase
-        let firebaseSuccess = false;
-        try {
-            const bookingsRef = window.firebaseRef(window.firebaseDatabase, 'bookings');
-            await window.firebasePush(bookingsRef, formData);
-            firebaseSuccess = true;
-            console.log("Firebase save successful");
-        } catch (firebaseError) {
-            console.error("Firebase error:", firebaseError);
-        }
+        console.log("Attempting Firebase save...");
+        const bookingsRef = window.firebaseRef(window.firebaseDatabase, 'bookings');
+        const firebaseResult = await window.firebasePush(bookingsRef, formData);
+        
+        console.log("Firebase save result:", firebaseResult);
+        if (!firebaseResult.key) throw new Error("Firebase didn't return a key");
 
         // 2. SECOND: Try sending email via FormSubmit
         let formSubmitSuccess = false;
@@ -835,7 +845,21 @@ document.getElementById('booking-form').addEventListener('submit', async functio
         document.getElementById('close-modal').addEventListener('click', function() {
             document.getElementById('success-modal').classList.add('hidden');
         });
+        
+// Add this anywhere in your script
+function testFirebaseConnection() {
+    const testRef = window.firebaseRef(window.firebaseDatabase, 'connection_test');
+    window.firebasePush(testRef, {
+        test: "connection",
+        timestamp: new Date().toISOString()
+    })
+    .then(() => console.log("Firebase test successful!"))
+    .catch(e => console.error("Firebase test failed:", e));
+}
 
+// Run test on page load
+setTimeout(testFirebaseConnection, 3000);
+        
         // Initialize default city
         document.querySelector('.city-btn[data-city="بريدة"]').click();
     </script>
