@@ -7,51 +7,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- Firebase SDK -->
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-
-    // Your EXACT Firebase Config (verified)
-    const firebaseConfig = {
-        apiKey: "AIzaSyARaAimHiNzNef6AZ2LKHl0a2V_euo2JYg",
-        authDomain: "booking-haiya.firebaseapp.com",
-        databaseURL: "https://booking-haiya-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "booking-haiya",
-        storageBucket: "booking-haiya.firebasestorage.app",
-        messagingSenderId: "920297070543",
-        appId: "1:920297070543:web:3e216c54a933b493fcfcba",
-        measurementId: "G-57T61BEJWD"
-    };
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const database = getDatabase(app);
-
-    // Debugging
-    console.log("Firebase connected to:", firebaseConfig.databaseURL);
-    
-    // Global access with error handling
-    window.firebaseDB = {
-        pushBooking: async (data) => {
-            try {
-                const bookingsRef = ref(database, 'bookings');
-                const newRef = push(bookingsRef);
-                await set(newRef, {
-                    ...data,
-                    status: "Pending",
-                    timestamp: Date.now(),
-                    compositeKey: `${data.city}_${data.sport}_${data.date}_${data.time}`
-                });
-                return newRef.key; // Return the unique ID
-            } catch (error) {
-                console.error("Firebase write error:", error);
-                throw error;
-            }
-        }
-    };
-</script>
-    
      <script>
         tailwind.config = {
             theme: {
@@ -738,6 +693,65 @@ Ladies, it's time!</p>
             
             timeSlotsContainer.classList.remove('hidden');
         }
+
+            <!-- Firebase SDK -->
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getDatabase, ref, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        // Initialize Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyARaAimHiNzNef6AZ2LKHl0a2V_euo2JYg",
+            authDomain: "booking-haiya.firebaseapp.com",
+            databaseURL: "https://booking-haiya-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "booking-haiya",
+            storageBucket: "booking-haiya.appspot.com",
+            messagingSenderId: "920297070543",
+            appId: "1:920297070543:web:3e216c54a933b493fcfcba",
+            measurementId: "G-57T61BEJWD"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+                    // Form submission
+            bookingForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                if (!document.getElementById('terms').checked) {
+                    alert('يرجى الموافقة على الشروط والأحكام');
+                    return;
+                }
+
+                const bookingData = {
+                    name: document.getElementById('full-name').value,
+                    phone: document.getElementById('phone').value,
+                    email: document.getElementById('email').value,
+                    notes: document.getElementById('notes').value,
+                    city: bookingCity.textContent,
+                    sport: bookingSport.textContent,
+                    date: bookingDate.textContent,
+                    time: bookingTime.textContent,
+                    price: hiddenPrice.value,
+                    status: "Pending",
+                    compositeKey: `${currentCity}_${currentSport}_${formatDateForDB(selectedDate)}_${bookingTime.textContent}`,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                };
+
+                const submitBtn = this.querySelector('button[type="submit"]');
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ';
+
+                try {
+                    // First check availability
+                    const available = await getAvailableSlots(currentCity, currentSport, formatDateForDB(selectedDate), bookingTime.textContent);
+                    if (available <= 0) {
+                        throw new Error('هذا الموعد لم يعد متاحاً');
+                    }
+                    
+                    // Save to Firebase
+                    const newBookingRef = db.ref('bookings').push();
+                    await newBookingRef.set(bookingData);
+                    
 
         // ========== DUAL SUBMISSION HANDLER ==========
 document.getElementById('booking-form').addEventListener('submit', async function(e) {
