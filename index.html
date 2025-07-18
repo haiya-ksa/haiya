@@ -62,6 +62,7 @@
             color: white;
         }
         
+        /* Hide scrollbar but allow scrolling */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -71,6 +72,7 @@
             scrollbar-width: none;
         }
         
+        /* Custom logo size */
         .logo-img {
             height: 25px;
             width: auto;
@@ -82,6 +84,7 @@
     <nav class="bg-primary-dark text-white shadow-lg sticky top-0 z-50">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-2">
+                <!-- Logo - replace src with your actual logo path -->
                 <img src="logo.png" alt="هيّا" class="logo-img">
             </div>
             <div class="hidden md:flex space-x-6 space-x-reverse">
@@ -89,18 +92,17 @@
                 <a href="#activities" class="hover:text-primary-pink transition">الأنشطة</a>
                 <a href="#booking" class="hover:text-primary-pink transition">الحجز</a>
                 <a href="#contact" class="hover:text-primary-pink transition">تواصل معنا</a>
-                <a href="#admin" id="admin-link" class="hidden hover:text-primary-pink transition">لوحة التحكم</a>
             </div>
             <button class="md:hidden text-white focus:outline-none" id="mobile-menu-button">
                 <i class="fas fa-bars text-2xl"></i>
             </button>
         </div>
+        <!-- Mobile menu -->
         <div class="md:hidden hidden bg-primary-dark px-4 py-2" id="mobile-menu">
             <a href="#home" class="block py-2 hover:text-primary-pink transition">الرئيسية</a>
             <a href="#activities" class="block py-2 hover:text-primary-pink transition">الأنشطة</a>
             <a href="#booking" class="block py-2 hover:text-primary-pink transition">الحجز</a>
             <a href="#contact" class="block py-2 hover:text-primary-pink transition">تواصل معنا</a>
-            <a href="#admin" id="mobile-admin-link" class="hidden block py-2 hover:text-primary-pink transition">لوحة التحكم</a>
         </div>
     </nav>
 
@@ -275,32 +277,38 @@
                     <p id="booking-details" class="text-gray-700">الرياضة: <span id="booking-sport"></span> | المدينة: <span id="booking-city"></span> | التاريخ: <span id="booking-date"></span> | الوقت: <span id="booking-time"></span></p>
                 </div>
                 
-                <form id="booking-form" class="space-y-6">
+                <form id="booking-form" action="https://formsubmit.co/haiya.saudi@gmail.com" method="POST" class="space-y-6">
+                    <!-- FormSubmit Hidden Fields -->
+                    <input type="hidden" name="_subject" value="حجز جديد - هيّا">
+                    <input type="hidden" name="_template" value="table">
+<input type="hidden" name="_next" value="https://[haiya-ksa].github.io/[haiya]/thanks.html">
+                    <input type="hidden" name="_captcha" value="false">
+                    
                     <!-- Hidden Fields for Booking Details -->
-                    <input type="hidden" id="hidden-sport">
-                    <input type="hidden" id="hidden-city">
-                    <input type="hidden" id="hidden-date">
-                    <input type="hidden" id="hidden-time">
-                    <input type="hidden" id="hidden-price">
+                    <input type="hidden" name="الرياضة" id="hidden-sport">
+                    <input type="hidden" name="المدينة" id="hidden-city">
+                    <input type="hidden" name="التاريخ" id="hidden-date">
+                    <input type="hidden" name="الوقت" id="hidden-time">
+                    <input type="hidden" name="السعر" id="hidden-price">
                     
                     <div>
                         <label for="full-name" class="block text-lg font-medium mb-2">الاسم الكامل</label>
-                        <input type="text" id="full-name" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent" required>
+                        <input type="text" id="full-name" name="الاسم الكامل" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent" required>
                     </div>
                     
                     <div>
                         <label for="phone" class="block text-lg font-medium mb-2">رقم الجوال</label>
-                        <input type="tel" id="phone" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent" required>
+                        <input type="tel" id="phone" name="رقم الجوال" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent" required>
                     </div>
                     
                     <div>
                         <label for="email" class="block text-lg font-medium mb-2">البريد الإلكتروني</label>
-                        <input type="email" id="email" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent">
+                        <input type="email" id="email" name="البريد الإلكتروني" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent">
                     </div>
                     
                     <div>
                         <label for="notes" class="block text-lg font-medium mb-2">ملاحظات إضافية (اختياري) + اذا تفضلين تنسيق مُنافساتك أو فريقك بنفس فئتك العمرية، فضلاً اذكري عمرك </label>
-                        <textarea id="notes" rows="3" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent"></textarea>
+                        <textarea id="notes" name="ملاحظات" rows="3" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent"></textarea>
                     </div>
                     
                     <div class="bg-gray-100 p-4 rounded-lg">
@@ -322,7 +330,7 @@
                     </div>
                     
                     <div class="flex items-center">
-                        <input type="checkbox" id="terms" class="w-5 h-5 rounded border-gray-300 text-primary-pink focus:ring-primary-pink" required>
+                        <input type="checkbox" id="terms" name="موافق على الشروط" class="w-5 h-5 rounded border-gray-300 text-primary-pink focus:ring-primary-pink" required>
                         <label for="terms" class="mr-2 text-gray-700">أوافق على الشروط والأحكام</label>
                     </div>
                     
@@ -330,48 +338,6 @@
                         تأكيد الحجز
                     </button>
                 </form>
-            </div>
-        </div>
-    </section>
-
-    <!-- Admin Dashboard (Hidden by default) -->
-    <section id="admin" class="py-16 bg-gray-50 hidden">
-        <div class="container mx-auto px-4">
-            <h2 class="text-3xl font-bold text-center mb-8">لوحة التحكم</h2>
-            
-            <div class="bg-white rounded-xl shadow-md p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-semibold">إدارة الحجوزات</h3>
-                    <div class="flex space-x-4 space-x-reverse">
-                        <input type="text" id="admin-search" placeholder="ابحث بالاسم أو الجوال..." class="px-4 py-2 border rounded-lg">
-                        <select id="admin-filter" class="px-4 py-2 border rounded-lg">
-                            <option value="all">جميع الحجوزات</option>
-                            <option value="Pending">قيد الانتظار</option>
-                            <option value="Confirmed">مؤكدة</option>
-                            <option value="Cancelled">ملغاة</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <div class="overflow-x-auto">
-                    <table class="w-full">
-                        <thead>
-                            <tr class="bg-gray-100">
-                                <th class="p-3 text-right">الاسم</th>
-                                <th class="p-3 text-right">الجوال</th>
-                                <th class="p-3 text-right">الرياضة</th>
-                                <th class="p-3 text-right">المدينة</th>
-                                <th class="p-3 text-right">التاريخ</th>
-                                <th class="p-3 text-right">الوقت</th>
-                                <th class="p-3 text-right">الحالة</th>
-                                <th class="p-3 text-right">إجراءات</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-bookings">
-                            <!-- Bookings will be loaded here -->
-                        </tbody>
-                    </table>
-                </div>
             </div>
         </div>
     </section>
@@ -409,6 +375,7 @@
             <div class="flex flex-col md:flex-row justify-between items-center">
                 <div class="mb-6 md:mb-0">
                     <div class="flex items-center space-x-2">
+                        <!-- Logo in footer - replace src with your actual logo path -->
                         <img src="logo.png" alt="هيّا" class="logo-img">
                     </div>
                     <p class="mt-2 text-gray-300">صُنع بعد سنين من الانتظار، لجعل الرياضة متاحة لجميع النساء
@@ -446,67 +413,45 @@ Ladies, it's time!</p>
         </div>
     </div>
 
-    <!-- Firebase and App Scripts -->
-    <script type="module">
-        // Firebase imports
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-        import { getDatabase, ref, push, set, query, orderByChild, equalTo, onValue, update } 
-              from "https://www.gstatic.com/firebasejs/11.10.0/firebase-database.js";
-
-        // Your Firebase config
-        const firebaseConfig = {
-            apiKey: "AIzaSyARaAimHiNzNef6AZ2LKHl0a2V_euo2JYg",
-            authDomain: "booking-haiya.firebaseapp.com",
-            databaseURL: "https://booking-haiya-default-rtdb.europe-west1.firebasedatabase.app",
-            projectId: "booking-haiya",
-            storageBucket: "booking-haiya.firebasestorage.app",
-            messagingSenderId: "920297070543",
-            appId: "1:920297070543:web:3e216c54a933b493fcfcba",
-            measurementId: "G-57T61BEJWD"
-        };
-
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
-
-        // ========== SPORTS AVAILABILITY ==========
-        const baseAvailability = {
+    <script>
+        // ========== CONFIGURATION SECTION ==========
+        const citySchedules = {
             "بريدة": {
                 "كرة السلة": {
                     availableDays: [0, 2, 4], // Sunday, Tuesday, Thursday
                     timeSlots: [
-                        { time: '4:00 مساءً', max: 10, price: 75 },
-                        { time: '6:00 مساءً', max: 10, price: 75 }
+                        { time: '4:00 مساءً', available: 5, max: 10, price: 75 },
+                        { time: '6:00 مساءً', available: 8, max: 10, price: 75 }
                     ]
                 },
                 "تنس الريشة": {
                     availableDays: [1, 3], // Monday, Wednesday
                     timeSlots: [
-                        { time: '5:00 مساءً', max: 8, price: 60 }
+                        { time: '5:00 مساءً', available: 4, max: 8, price: 60 }
                     ]
                 },
                 "كرة القدم": {
                     availableDays: [0, 3, 5], // Sunday, Wednesday, Friday
                     timeSlots: [
-                        { time: '5:30 مساءً', max: 12, price: 80 }
+                        { time: '5:30 مساءً', available: 7, max: 12, price: 80 }
                     ]
                 },
                 "كرة الطائرة": {
                     availableDays: [1, 4], // Monday, Thursday
                     timeSlots: [
-                        { time: '4:00 مساءً', max: 12, price: 70 }
+                        { time: '4:00 مساءً', available: 6, max: 12, price: 70 }
                     ]
                 },
                 "التنس": {
                     availableDays: [2, 5], // Tuesday, Friday
                     timeSlots: [
-                        { time: '3:30 مساءً', max: 4, price: 90 }
+                        { time: '3:30 مساءً', available: 2, max: 4, price: 90 }
                     ]
                 },
                 "السهام": {
                     availableDays: [0, 3], // Sunday, Wednesday
                     timeSlots: [
-                        { time: '4:00 مساءً', max: 6, price: 65 }
+                        { time: '4:00 مساءً', available: 3, max: 6, price: 65 }
                     ]
                 }
             },
@@ -514,13 +459,13 @@ Ladies, it's time!</p>
                 "كرة السلة": {
                     availableDays: [1, 3], // Monday, Wednesday
                     timeSlots: [
-                        { time: '5:00 مساءً', max: 8, price: 75 }
+                        { time: '5:00 مساءً', available: 4, max: 8, price: 75 }
                     ]
                 },
                 "كرة القدم": {
                     availableDays: [0, 4], // Sunday, Thursday
                     timeSlots: [
-                        { time: '6:00 مساءً', max: 10, price: 80 }
+                        { time: '6:00 مساءً', available: 6, max: 10, price: 80 }
                     ]
                 }
             },
@@ -528,7 +473,7 @@ Ladies, it's time!</p>
                 "كرة السلة": {
                     availableDays: [2, 5], // Tuesday, Friday
                     timeSlots: [
-                        { time: '4:30 مساءً', max: 8, price: 75 }
+                        { time: '4:30 مساءً', available: 5, max: 8, price: 75 }
                     ]
                 }
             },
@@ -536,170 +481,216 @@ Ladies, it's time!</p>
                 "كرة القدم": {
                     availableDays: [1, 4], // Monday, Thursday
                     timeSlots: [
-                        { time: '5:00 مساءً', max: 10, price: 80 }
+                        { time: '5:00 مساءً', available: 5, max: 10, price: 80 }
                     ]
                 }
             }
         };
 
-        // ========== BOOKING FUNCTIONS ==========
-        async function saveBooking(bookingData) {
-            try {
-                const bookingsRef = ref(db, 'bookings');
-                const newBookingRef = push(bookingsRef);
-                await set(newBookingRef, {
-                    ...bookingData,
-                    timestamp: Date.now()
-                });
-                return true;
-            } catch (error) {
-                console.error("Error saving booking:", error);
-                return false;
-            }
-        }
-
-        async function getAvailableSlots(city, sport, date, time) {
-            const bookingsRef = ref(db, 'bookings');
-            const bookingQuery = query(
-                bookingsRef,
-                orderByChild('compositeKey'),
-                equalTo(`${city}_${sport}_${date}_${time}`)
-            );
-            
-            const snapshot = await new Promise(resolve => 
-                onValue(bookingQuery, resolve, { onlyOnce: true })
-            );
-            
-            const bookings = snapshot.val() || {};
-            const baseSlot = baseAvailability[city]?.[sport]?.timeSlots?.find(s => s.time === time);
-            return baseSlot ? Math.max(0, baseSlot.max - Object.keys(bookings).length) : 0;
-        }
-
-        // ========== ADMIN FUNCTIONS ==========
-        function loadAdminBookings() {
-            const bookingsRef = ref(db, 'bookings');
-            onValue(bookingsRef, (snapshot) => {
-                const bookings = snapshot.val() || {};
-                const tableBody = document.getElementById('admin-bookings');
-                tableBody.innerHTML = '';
-                
-                Object.entries(bookings).forEach(([id, booking]) => {
-                    const row = document.createElement('tr');
-                    row.className = 'border-b hover:bg-gray-50';
-                    row.innerHTML = `
-                        <td class="p-3">${booking.name}</td>
-                        <td class="p-3">${booking.phone}</td>
-                        <td class="p-3">${booking.sport}</td>
-                        <td class="p-3">${booking.city}</td>
-                        <td class="p-3">${booking.date}</td>
-                        <td class="p-3">${booking.time}</td>
-                        <td class="p-3">
-                            <select class="status-select border p-1 rounded" data-id="${id}">
-                                <option value="Pending" ${booking.status === 'Pending' ? 'selected' : ''}>قيد الانتظار</option>
-                                <option value="Confirmed" ${booking.status === 'Confirmed' ? 'selected' : ''}>مؤكدة</option>
-                                <option value="Cancelled" ${booking.status === 'Cancelled' ? 'selected' : ''}>ملغاة</option>
-                            </select>
-                        </td>
-                        <td class="p-3">
-                            <button class="delete-booking text-red-500 hover:text-red-700" data-id="${id}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </td>
-                    `;
-                    tableBody.appendChild(row);
-                });
-                
-                // Add event listeners
-                document.querySelectorAll('.status-select').forEach(select => {
-                    select.addEventListener('change', (e) => {
-                        updateStatus(e.target.dataset.id, e.target.value);
-                    });
-                });
-                
-                document.querySelectorAll('.delete-booking').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        deleteBooking(e.target.closest('button').dataset.id);
-                    });
-                });
-            });
-        }
-
-        function updateStatus(bookingId, newStatus) {
-            update(ref(db, `bookings/${bookingId}`), { status: newStatus });
-        }
-
-        function deleteBooking(bookingId) {
-            if (confirm('هل أنت متأكد من حذف هذه الحجز؟')) {
-                set(ref(db, `bookings/${bookingId}`), null);
-            }
-        }
-
-        // ========== EVENT LISTENERS ==========
-        document.getElementById('booking-form').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            
-            if (!document.getElementById('terms').checked) {
-                alert('يرجى الموافقة على الشروط والأحكام');
-                return;
-            }
-
-            const city = document.getElementById('booking-city').textContent;
-            const sport = document.getElementById('booking-sport').textContent;
-            const date = document.getElementById('booking-date').textContent;
-            const time = document.getElementById('booking-time').textContent;
-            
-            const bookingData = {
-                name: document.getElementById('full-name').value,
-                phone: document.getElementById('phone').value,
-                email: document.getElementById('email').value,
-                notes: document.getElementById('notes').value,
-                city: city,
-                sport: sport,
-                date: date,
-                time: time,
-                price: document.getElementById('hidden-price').value,
-                status: "Pending",
-                compositeKey: `${city}_${sport}_${date}_${time}`
-            };
-
-            const submitBtn = this.querySelector('button[type="submit"]');
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ';
-
-            try {
-                const available = await getAvailableSlots(city, sport, date, time);
-                if (available <= 0) {
-                    throw new Error('هذا الموعد لم يعد متاحاً');
-                }
-                
-                const success = await saveBooking(bookingData);
-                if (success) {
-                    document.getElementById('success-message').textContent = 
-                        `تم تأكيد حجز ${bookingData.name} لرياضة ${bookingData.sport}`;
-                    document.getElementById('success-modal').classList.remove('hidden');
-                    this.reset();
-                }
-            } catch (error) {
-                alert(`حدث خطأ: ${error.message}`);
-            } finally {
-                submitBtn.disabled = false;
-                submitBtn.textContent = 'تأكيد الحجز';
-            }
+        // Mobile menu toggle
+        document.getElementById('mobile-menu-button').addEventListener('click', function() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
         });
 
+        // Smooth scrolling for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function(e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                    document.getElementById('mobile-menu').classList.add('hidden');
+                }
+            });
+        });
+
+        // City selection
+        const cityButtons = document.querySelectorAll('.city-btn');
+        let selectedCity = 'بريدة'; // Default city
+        
+        cityButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                cityButtons.forEach(btn => {
+                    btn.classList.remove('bg-primary-dark', 'text-white');
+                    btn.classList.add('bg-gray-200', 'hover:bg-gray-300');
+                });
+                this.classList.remove('bg-gray-200', 'hover:bg-gray-300');
+                this.classList.add('bg-primary-dark', 'text-white', 'hover:bg-opacity-90');
+                selectedCity = this.dataset.city;
+                document.getElementById('city-name').textContent = selectedCity;
+            });
+        });
+
+        // Calendar navigation
+        let currentWeek = 0;
+        document.getElementById('prev-week').addEventListener('click', function() {
+            currentWeek--;
+            generateCalendar();
+        });
+        
+        document.getElementById('next-week').addEventListener('click', function() {
+            currentWeek++;
+            generateCalendar();
+        });
+        
+        // Back to activities button
+        document.querySelector('.back-to-activities').addEventListener('click', function() {
+            document.getElementById('calendar-section').classList.add('hidden');
+            document.getElementById('time-slots-container').classList.add('hidden');
+            document.getElementById('activities').scrollIntoView({ behavior: 'smooth' });
+        });
+
+        // View calendar for a sport
+        const viewCalendarButtons = document.querySelectorAll('.view-calendar-btn');
+        let selectedSport = '';
+        
+        viewCalendarButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                selectedSport = this.dataset.sport;
+                document.getElementById('sport-name').textContent = selectedSport;
+                document.getElementById('city-name').textContent = selectedCity;
+                document.getElementById('booking-sport').textContent = selectedSport;
+                document.getElementById('booking-city').textContent = selectedCity;
+                
+                document.getElementById('calendar-section').classList.remove('hidden');
+                document.getElementById('time-slots-container').classList.add('hidden');
+                generateCalendar();
+                document.getElementById('calendar-section').scrollIntoView({ behavior: 'smooth' });
+            });
+        });
+
+        // Generate calendar days
+        function generateCalendar() {
+            const calendarDays = document.getElementById('calendar-days');
+            calendarDays.innerHTML = '';
+            
+            const today = new Date();
+            const startDate = new Date(today);
+            startDate.setDate(today.getDate() + (currentWeek * 7) - today.getDay());
+            
+            // Update week range display
+            const weekEndDate = new Date(startDate);
+            weekEndDate.setDate(startDate.getDate() + 6);
+            
+            const options = { day: 'numeric', month: 'long' };
+            const startDateStr = startDate.toLocaleDateString('ar-EG', options);
+            const endDateStr = weekEndDate.toLocaleDateString('ar-EG', options);
+            
+            document.getElementById('week-range').textContent = `${startDateStr} - ${endDateStr}`;
+            
+            // Get schedule for current city and sport
+            const sportSchedule = citySchedules[selectedCity]?.[selectedSport] || {};
+            const availableDays = sportSchedule.availableDays || [];
+            
+            // Generate days
+            for (let i = 0; i < 7; i++) {
+                const dayDate = new Date(startDate);
+                dayDate.setDate(startDate.getDate() + i);
+                
+                const dayElement = document.createElement('div');
+                const isAvailable = availableDays.includes(dayDate.getDay());
+                const isPast = dayDate < today && dayDate.toDateString() !== today.toDateString();
+                
+                dayElement.className = `calendar-day bg-white rounded-lg p-4 text-center border ${
+                    isAvailable && !isPast ? 'cursor-pointer border-gray-200 hover:bg-primary-pink hover:text-white' : 'opacity-50 cursor-not-allowed border-gray-100'
+                }`;
+                
+                if (dayDate.toDateString() === today.toDateString()) {
+                    dayElement.classList.add('border-primary-pink', 'border-2');
+                }
+
+                dayElement.innerHTML = `
+                    <div class="font-bold">${dayDate.toLocaleDateString('ar-EG', { weekday: 'long' })}</div>
+                    <div class="text-2xl my-2">${dayDate.getDate()}</div>
+                    <div class="text-sm text-gray-500">${dayDate.toLocaleDateString('ar-EG', { month: 'long' })}</div>
+                `;
+                
+                if (isAvailable && !isPast) {
+                    dayElement.addEventListener('click', function() {
+                        document.querySelectorAll('.calendar-day').forEach(day => {
+                            day.classList.remove('active-day');
+                        });
+                        this.classList.add('active-day');
+                        showTimeSlots(dayDate, sportSchedule.timeSlots);
+                    });
+                }
+                
+                calendarDays.appendChild(dayElement);
+            }
+        }
+
+        // Show time slots for a selected day
+        function showTimeSlots(date, slots) {
+            const timeSlotsContainer = document.getElementById('time-slots-container');
+            const timeSlots = document.getElementById('time-slots');
+            const selectedDateElement = document.getElementById('selected-date').querySelector('span');
+            
+            const options = { weekday: 'long', day: 'numeric', month: 'long' };
+            const formattedDate = date.toLocaleDateString('ar-EG', options);
+            selectedDateElement.textContent = formattedDate;
+            document.getElementById('booking-date').textContent = formattedDate;
+            document.getElementById('hidden-date').value = formattedDate;
+            
+            timeSlots.innerHTML = '';
+            
+            (slots || []).forEach(slot => {
+                const slotElement = document.createElement('div');
+                const isFull = slot.available === 0;
+                const isAlmostFull = slot.available <= 2 && slot.available > 0;
+                
+                slotElement.className = 'bg-white rounded-lg p-4 border border-gray-200';
+                slotElement.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold">${slot.time}</span>
+                        <span class="text-sm ${isFull ? 'text-red-500' : isAlmostFull ? 'text-yellow-500' : 'text-green-500'}">
+                            ${isFull ? 'اكتمل' : `متاح (${slot.available}/${slot.max})`}
+                        </span>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-2">السعر: ${slot.price} ريال</div>
+                    <button class="w-full mt-2 py-2 rounded-lg ${
+                        isFull ? 'bg-gray-200 cursor-not-allowed' : 'bg-primary-pink hover:bg-opacity-90 text-white'
+                    } transition" ${isFull ? 'disabled' : ''}>
+                        ${isFull ? 'اكتمل العدد' : 'اختيار هذا الموعد'}
+                    </button>
+                `;
+                
+                if (!isFull) {
+                    slotElement.querySelector('button').addEventListener('click', function() {
+                        document.getElementById('booking-time').textContent = slot.time;
+                        document.getElementById('booking-price').textContent = `${slot.price} ريال`;
+                        document.getElementById('hidden-time').value = slot.time;
+                        document.getElementById('hidden-price').value = `${slot.price} ريال`;
+                        document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
+                    });
+                }
+                
+                timeSlots.appendChild(slotElement);
+            });
+            
+            timeSlotsContainer.classList.remove('hidden');
+        }
+
+        // Booking form submission
+        document.getElementById('booking-form').addEventListener('submit', function(e) {
+            // Update hidden fields before submission
+            document.getElementById('hidden-sport').value = document.getElementById('booking-sport').textContent;
+            document.getElementById('hidden-city').value = document.getElementById('booking-city').textContent;
+            
+            // Show success modal (will still submit via FormSubmit)
+            const successMessage = `تم تأكيد حجزك لرياضة ${document.getElementById('booking-sport').textContent}`;
+            document.getElementById('success-message').textContent = successMessage;
+            document.getElementById('success-modal').classList.remove('hidden');
+        });
+
+        // Close modal
         document.getElementById('close-modal').addEventListener('click', function() {
             document.getElementById('success-modal').classList.add('hidden');
         });
 
-        // Show admin panel when URL has #admin
-        if (window.location.hash === '#admin') {
-            document.getElementById('admin').classList.remove('hidden');
-            document.getElementById('admin-link').classList.remove('hidden');
-            document.getElementById('mobile-admin-link').classList.remove('hidden');
-            loadAdminBookings();
-        }
-
-        // [Keep all your existing calendar and UI functions]
         // Initialize default city button as active
         document.querySelector('.city-btn[data-city="بريدة"]').click();
     </script>
