@@ -6,6 +6,7 @@
     <title>هيّا | مجتمع نسائي رياضي في القصيم</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -25,30 +26,11 @@
         const app = initializeApp(firebaseConfig);
         const database = getDatabase(app);
         
-        // Make Firebase functions available globally
-        window.firebaseApp = app;
         window.firebaseDatabase = database;
-        window.firebasePush = push;
         window.firebaseRef = ref;
+        window.firebasePush = push;
     </script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: {
-                            dark: '#333333',
-                            light: '#f5f5f5',
-                            pink: '#f8a5c2',
-                        }
-                    },
-                    fontFamily: {
-                        arabic: ['Tajawal', 'sans-serif'],
-                    },
-                }
-            }
-        }
-    </script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;900&display=swap');
         
@@ -87,7 +69,6 @@
             color: white;
         }
         
-        /* Hide scrollbar but allow scrolling */
         .no-scrollbar::-webkit-scrollbar {
             display: none;
         }
@@ -97,10 +78,23 @@
             scrollbar-width: none;
         }
         
-        /* Custom logo size */
         .logo-img {
             height: 25px;
             width: auto;
+        }
+
+        #success-modal {
+            transition: opacity 0.3s ease;
+        }
+        #success-modal.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        #success-modal > div {
+            transition: transform 0.3s ease;
+        }
+        #success-modal.hidden > div {
+            transform: translateY(-20px);
         }
     </style>
 </head>
@@ -109,7 +103,6 @@
     <nav class="bg-primary-dark text-white shadow-lg sticky top-0 z-50">
         <div class="container mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center space-x-2">
-                <!-- Logo - replace src with your actual logo path -->
                 <img src="logo.png" alt="هيّا" class="logo-img">
             </div>
             <div class="hidden md:flex space-x-6 space-x-reverse">
@@ -122,6 +115,13 @@
                 <i class="fas fa-bars text-2xl"></i>
             </button>
         </div>
+        <div class="md:hidden hidden bg-primary-dark px-4 py-2" id="mobile-menu">
+            <a href="#home" class="block py-2 hover:text-primary-pink transition">الرئيسية</a>
+            <a href="#activities" class="block py-2 hover:text-primary-pink transition">الأنشطة</a>
+            <a href="#booking" class="block py-2 hover:text-primary-pink transition">الحجز</a>
+            <a href="#contact" class="block py-2 hover:text-primary-pink transition">تواصل معنا</a>
+        </div>
+    </nav>
         <!-- Mobile menu -->
         <div class="md:hidden hidden bg-primary-dark px-4 py-2" id="mobile-menu">
             <a href="#home" class="block py-2 hover:text-primary-pink transition">الرئيسية</a>
@@ -291,7 +291,7 @@
         </div>
     </section>
 
-    <!-- Booking & Payment Page -->
+    <!-- Booking Form Section -->
     <section id="booking" class="py-16 bg-white">
         <div class="container mx-auto px-4">
             <h2 class="text-3xl font-bold text-center mb-12">إتمام الحجز</h2>
@@ -302,8 +302,14 @@
                     <p id="booking-details" class="text-gray-700">الرياضة: <span id="booking-sport"></span> | المدينة: <span id="booking-city"></span> | التاريخ: <span id="booking-date"></span> | الوقت: <span id="booking-time"></span></p>
                 </div>
                 
-                <form id="booking-form" class="space-y-6">
-                    <!-- Hidden Fields for Booking Details -->
+                <form id="booking-form" action="https://formsubmit.co/haiya.saudi@gmail.com" method="POST" class="space-y-6">
+                    <!-- FormSubmit Hidden Fields -->
+                    <input type="hidden" name="_subject" value="حجز جديد - هيّا">
+                    <input type="hidden" name="_template" value="table">
+                    <input type="hidden" name="_next" value="#success">
+                    <input type="hidden" name="_captcha" value="false">
+                    
+                    <!-- Hidden Fields for Both Systems -->
                     <input type="hidden" name="الرياضة" id="hidden-sport">
                     <input type="hidden" name="المدينة" id="hidden-city">
                     <input type="hidden" name="التاريخ" id="hidden-date">
@@ -417,7 +423,7 @@ Ladies, it's time!</p>
         </div>
     </footer>
 
-    <!-- Success Modal -->
+   <!-- Success Modal -->
     <div id="success-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
         <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4 text-center">
             <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -511,7 +517,7 @@ Ladies, it's time!</p>
             const menu = document.getElementById('mobile-menu');
             menu.classList.toggle('hidden');
         });
-
+        
         // Smooth scrolling for navigation links
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function(e) {
@@ -693,70 +699,90 @@ Ladies, it's time!</p>
             timeSlotsContainer.classList.remove('hidden');
         }
 
-    // Firebase form submission
-    document.getElementById('booking-form').addEventListener('submit', async function(e) {
-        e.preventDefault();
-        
-        // Validate form
-        if (!document.getElementById('terms').checked) {
-            alert('يرجى الموافقة على الشروط والأحكام');
-            return;
-        }
+        // ========== DUAL SUBMISSION HANDLER ==========
+        document.getElementById('booking-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            // Validate form
+            if (!document.getElementById('terms').checked) {
+                alert('يرجى الموافقة على الشروط والأحكام');
+                return;
+            }
 
-        // Get form data
-        const formData = {
-            sport: document.getElementById('booking-sport').textContent,
-            city: document.getElementById('booking-city').textContent,
-            date: document.getElementById('booking-date').textContent,
-            time: document.getElementById('booking-time').textContent,
-            price: document.getElementById('booking-price').textContent,
-            fullName: document.getElementById('full-name').value,
-            phone: document.getElementById('phone').value,
-            email: document.getElementById('email').value || 'لم يتم تقديمه',
-            notes: document.getElementById('notes').value || 'لا يوجد',
-            timestamp: new Date().toISOString()
-        };
+            // Prepare form data
+            const formData = {
+                sport: document.getElementById('booking-sport').textContent,
+                city: document.getElementById('booking-city').textContent,
+                date: document.getElementById('booking-date').textContent,
+                time: document.getElementById('booking-time').textContent,
+                price: document.getElementById('booking-price').textContent,
+                fullName: document.getElementById('full-name').value,
+                phone: document.getElementById('phone').value,
+                email: document.getElementById('email').value || 'لم يتم تقديمه',
+                notes: document.getElementById('notes').value || 'لا يوجد',
+                timestamp: new Date().toISOString()
+            };
 
-        // Validate required fields
-        if (!formData.fullName || !formData.phone) {
-            alert('يرجى ملء جميع الحقول المطلوبة');
-            return;
-        }
+            // Validate required fields
+            if (!formData.fullName || !formData.phone) {
+                alert('يرجى ملء جميع الحقول المطلوبة');
+                return;
+            }
 
-        try {
-            // Show loading state
+            // Set loading state
             const submitBtn = document.querySelector('#booking-form button[type="submit"]');
             submitBtn.disabled = true;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
-            
-            // Save to Firebase
-            const bookingsRef = window.firebaseRef(window.firebaseDatabase, 'bookings');
-            await window.firebasePush(bookingsRef, formData);
-            
-            // Show success message
-            const successMessage = `تم تأكيد حجزك لرياضة ${formData.sport}`;
-            document.getElementById('success-message').textContent = successMessage;
-            document.getElementById('success-modal').classList.remove('hidden');
-            
-            // Reset form
-            document.getElementById('booking-form').reset();
-        } catch (error) {
-            console.error('Error saving booking:', error);
-            alert('حدث خطأ أثناء حفظ الحجز. يرجى المحاولة مرة أخرى أو التواصل معنا عبر الواتساب.');
-        } finally {
-            // Reset button state
-            const submitBtn = document.querySelector('#booking-form button[type="submit"]');
-            submitBtn.disabled = false;
-            submitBtn.textContent = 'تأكيد الحجز';
-        }
-    });
+
+            try {
+                // 1. Save to Firebase
+                const bookingsRef = window.firebaseRef(window.firebaseDatabase, 'bookings');
+                await window.firebasePush(bookingsRef, formData);
+                
+                // 2. Prepare FormSubmit data
+                document.getElementById('hidden-sport').value = formData.sport;
+                document.getElementById('hidden-city').value = formData.city;
+                document.getElementById('hidden-date').value = formData.date;
+                document.getElementById('hidden-time').value = formData.time;
+                document.getElementById('hidden-price').value = formData.price;
+                
+                // 3. Submit to FormSubmit
+                const form = e.target;
+                const formAction = form.getAttribute('action');
+                const formSubmitResponse = await fetch(formAction, {
+                    method: 'POST',
+                    body: new FormData(form),
+                    headers: { 'Accept': 'application/json' }
+                });
+                
+                if (!formSubmitResponse.ok) throw new Error('FormSubmit failed');
+
+                // Show success
+                document.getElementById('success-message').textContent = 
+                    `تم تأكيد حجزك لرياضة ${formData.sport}`;
+                document.getElementById('success-modal').classList.remove('hidden');
+                form.reset();
+                
+            } catch (error) {
+                console.error('Error:', error);
+                
+                if (error.message.includes('Firebase')) {
+                    alert('تم إرسال الإيميل ولكن هناك مشكلة في حفظ البيانات. يرجى التواصل عبر الواتساب');
+                } else {
+                    alert('تم حفظ البيانات ولكن هناك مشكلة في الإرسال. يرجى التواصل عبر الواتساب');
+                }
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'تأكيد الحجز';
+            }
+        });
 
         // Close modal
         document.getElementById('close-modal').addEventListener('click', function() {
             document.getElementById('success-modal').classList.add('hidden');
         });
 
-        // Initialize default city button as active
+        // Initialize default city
         document.querySelector('.city-btn[data-city="بريدة"]').click();
     </script>
 </body>
