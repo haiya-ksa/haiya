@@ -295,7 +295,7 @@
                     
                     <div>
                         <label for="email" class="block text-lg font-medium mb-2">البريد الإلكتروني</label>
-                        <input type="email" id="email" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent">
+                        <input type="email" id="email" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent" required>
                     </div>
                     
                     <div>
@@ -446,14 +446,9 @@ Ladies, it's time!</p>
         </div>
     </div>
 
-    <!-- Firebase and App Scripts -->
-    <script type="module">
-        // Firebase imports
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
-        import { getDatabase, ref, push, set, query, orderByChild, equalTo, onValue, update, remove } 
-              from "https://www.gstatic.com/firebasejs/10.11.1/firebase-database.js";
-
-        // Your Firebase config
+    <!-- Calendar and Booking System JavaScript -->
+    <script>
+        // Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyARaAimHiNzNef6AZ2LKHl0a2V_euo2JYg",
             authDomain: "booking-haiya.firebaseapp.com",
@@ -466,8 +461,8 @@ Ladies, it's time!</p>
         };
 
         // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getDatabase(app);
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
 
         // ========== SPORTS AVAILABILITY ==========
         const baseAvailability = {
@@ -636,11 +631,12 @@ Ladies, it's time!</p>
             const sport = bookingSport.textContent;
             const date = bookingDate.textContent;
             const time = bookingTime.textContent;
+            const email = document.getElementById('email').value;
             
             const bookingData = {
                 name: document.getElementById('full-name').value,
                 phone: document.getElementById('phone').value,
-                email: document.getElementById('email').value,
+                email: email,
                 notes: document.getElementById('notes').value,
                 city: city,
                 sport: sport,
@@ -648,7 +644,8 @@ Ladies, it's time!</p>
                 time: time,
                 price: hiddenPrice.value,
                 status: "Pending",
-                compositeKey: `${city}_${sport}_${date}_${time}`
+                compositeKey: `${city}_${sport}_${date}_${time}`,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
             };
 
             const submitBtn = this.querySelector('button[type="submit"]');
@@ -656,18 +653,25 @@ Ladies, it's time!</p>
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ';
 
             try {
-                const available = await getAvailableSlots(city, sport, date, time);
+                // First check availability
+                const available = await getAvailableSlots(city, sport, formatDateForDB(selectedDate), time);
                 if (available <= 0) {
                     throw new Error('هذا الموعد لم يعد متاحاً');
                 }
                 
-                const success = await saveBooking(bookingData);
-                if (success) {
-                    document.getElementById('success-message').textContent = 
-                        `تم تأكيد حجز ${bookingData.name} لرياضة ${bookingData.sport}`;
-                    document.getElementById('success-modal').classList.remove('hidden');
-                    this.reset();
-                }
+                // Save to Firebase
+                const newBookingRef = db.ref('bookings').push();
+                await newBookingRef.set(bookingData);
+                
+                // Send email notification
+                await sendEmailNotification(bookingData);
+                
+                // Show success
+                document.getElementById('success-message').textContent = 
+                    `تم تأكيد حجز ${bookingData.name} لرياضة ${bookingData.sport}`;
+                document.getElementById('success-modal').classList.remove('hidden');
+                this.reset();
+                
             } catch (error) {
                 alert(`حدث خطأ: ${error.message}`);
             } finally {
@@ -718,7 +722,10 @@ Ladies, it's time!</p>
                 const sportAvailability = baseAvailability[currentCity]?.[currentSport];
                 const isAvailable = sportAvailability?.availableDays.includes(i);
                 
-                if (!isAvailable) {
+                // Check if date is in the past
+                const isPastDate = dayDate < new Date(new Date().setHours(0, 0, 0, 0));
+                
+                if (!isAvailable || isPastDate) {
                     dayElement.classList.add('disabled', 'bg-gray-100', 'text-gray-400');
                     dayElement.classList.remove('cursor-pointer');
                 } else {
@@ -733,7 +740,7 @@ Ladies, it's time!</p>
                     <div class="text-sm">${getDayName(i)}</div>
                 `;
                 
-                if (isAvailable) {
+                if (isAvailable && !isPastDate) {
                     dayElement.addEventListener('click', () => {
                         selectDate(dayDate);
                     });
@@ -768,7 +775,8 @@ Ladies, it's time!</p>
             
             // Populate time slots
             for (const slot of sportAvailability.timeSlots) {
-                const available = await getAvailableSlots(currentCity, currentSport, formatDate(date), slot.time);
+                const available = await getAvailableSlots(currentCity, currentSport, formatDateForDB(date), slot.time);
+                const isFull = available <= 0;
                 
                 const slotElement = document.createElement('div');
                 slotElement.className = 'bg-white border rounded-lg p-4 text-center';
@@ -777,16 +785,13 @@ Ladies, it's time!</p>
                     <div class="font-bold text-lg mb-2">${slot.time}</div>
                     <div class="text-gray-600 mb-3">${available} / ${slot.max} متاح</div>
                     <div class="font-bold text-primary-dark mb-3">${slot.price} ريال</div>
-                    <button class="book-btn w-full bg-primary-pink hover:bg-opacity-90 text-white py-2 rounded-lg transition" 
-                            data-time="${slot.time}" data-price="${slot.price}">
-                        احجز الآن
+                    <button class="book-btn w-full ${isFull ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary-pink hover:bg-opacity-90'} text-white py-2 rounded-lg transition" 
+                            data-time="${slot.time}" data-price="${slot.price}" ${isFull ? 'disabled' : ''}>
+                        ${isFull ? 'محجوز بالكامل' : 'احجز الآن'}
                     </button>
                 `;
                 
-                if (available <= 0) {
-                    slotElement.querySelector('.book-btn').disabled = true;
-                    slotElement.querySelector('.book-btn').classList.add('opacity-50', 'cursor-not-allowed');
-                } else {
+                if (!isFull) {
                     slotElement.querySelector('.book-btn').addEventListener('click', (e) => {
                         e.preventDefault();
                         bookTimeSlot(slot.time, slot.price);
@@ -797,9 +802,11 @@ Ladies, it's time!</p>
             }
         }
 
-        function formatDate(date) {
-            const options = { year: 'numeric', month: '2-digit', day: '2-digit' };
-            return date.toLocaleDateString('ar-EG', options).replace(/\s/g, '');
+        function formatDateForDB(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
         }
 
         function bookTimeSlot(time, price) {
@@ -813,7 +820,7 @@ Ladies, it's time!</p>
             // Update hidden fields
             hiddenSport.value = currentSport;
             hiddenCity.value = currentCity;
-            hiddenDate.value = formatDate(selectedDate);
+            hiddenDate.value = formatDateForDB(selectedDate);
             hiddenTime.value = time;
             hiddenPrice.value = price;
             
@@ -822,43 +829,67 @@ Ladies, it's time!</p>
             document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
         }
 
-        // ========== BOOKING FUNCTIONS ==========
-        async function saveBooking(bookingData) {
-            try {
-                const bookingsRef = ref(db, 'bookings');
-                const newBookingRef = push(bookingsRef);
-                await set(newBookingRef, {
-                    ...bookingData,
-                    timestamp: Date.now()
-                });
-                return true;
-            } catch (error) {
-                console.error("Error saving booking:", error);
-                return false;
-            }
-        }
-
+        // ========== FIREBASE FUNCTIONS ==========
         async function getAvailableSlots(city, sport, date, time) {
-            const bookingsRef = ref(db, 'bookings');
-            const bookingQuery = query(
-                bookingsRef,
-                orderByChild('compositeKey'),
-                equalTo(`${city}_${sport}_${date}_${time}`)
-            );
-            
-            const snapshot = await new Promise(resolve => 
-                onValue(bookingQuery, resolve, { onlyOnce: true })
-            );
+            const snapshot = await db.ref('bookings')
+                .orderByChild('compositeKey')
+                .equalTo(`${city}_${sport}_${date}_${time}`)
+                .once('value');
             
             const bookings = snapshot.val() || {};
             const baseSlot = baseAvailability[city]?.[sport]?.timeSlots?.find(s => s.time === time);
             return baseSlot ? Math.max(0, baseSlot.max - Object.keys(bookings).length) : 0;
         }
 
+        // ========== EMAIL NOTIFICATION ==========
+        async function sendEmailNotification(bookingData) {
+            const emailData = {
+                to: bookingData.email, // Send to customer
+                bcc: 'haiya.saudi@gmail.com', // Blind copy to yourself
+                subject: `تأكيد حجز ${bookingData.sport}`,
+                html: `
+                    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                        <h2 style="color: #f8a5c2;">تم تأكيد حجزك بنجاح!</h2>
+                        <p>السلام عليكم ${bookingData.name},</p>
+                        <p>تم تأكيد حجزك لرياضة ${bookingData.sport} بنجاح. تفاصيل الحجز:</p>
+                        <ul>
+                            <li>المدينة: ${bookingData.city}</li>
+                            <li>التاريخ: ${bookingData.date}</li>
+                            <li>الوقت: ${bookingData.time}</li>
+                            <li>المبلغ: ${bookingData.price} ريال</li>
+                        </ul>
+                        <p>يرجى إرسال إثبات التحويل عبر الواتساب على الرقم 0582068727 لتأكيد الحجز.</p>
+                        <p>شكراً لاستخدامك منصة هيّا!</p>
+                    </div>
+                `
+            };
+
+            // Use Firebase Functions or a service like EmailJS to send the email
+            // This is a placeholder - you'll need to implement your email sending solution
+            console.log('Would send email:', emailData);
+            
+            // Example using fetch to a backend endpoint:
+            try {
+                const response = await fetch('https://your-email-service.com/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(emailData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Failed to send email');
+                }
+            } catch (error) {
+                console.error('Email sending error:', error);
+                // Don't fail the booking if email fails
+            }
+        }
+
         // ========== ADMIN FUNCTIONS ==========
         function loadAdminBookings() {
-            const bookingsRef = ref(db, 'bookings');
-            onValue(bookingsRef, (snapshot) => {
+            db.ref('bookings').on('value', (snapshot) => {
                 const bookings = snapshot.val() || {};
                 const tableBody = document.getElementById('admin-bookings');
                 tableBody.innerHTML = '';
@@ -905,12 +936,12 @@ Ladies, it's time!</p>
         }
 
         function updateStatus(bookingId, newStatus) {
-            update(ref(db, `bookings/${bookingId}`), { status: newStatus });
+            db.ref(`bookings/${bookingId}`).update({ status: newStatus });
         }
 
         function deleteBooking(bookingId) {
             if (confirm('هل أنت متأكد من حذف هذه الحجز؟')) {
-                remove(ref(db, `bookings/${bookingId}`));
+                db.ref(`bookings/${bookingId}`).remove();
             }
         }
 
@@ -926,5 +957,8 @@ Ladies, it's time!</p>
         // Initialize default city button as active
         document.querySelector('.city-btn[data-city="بريدة"]').click();
     </script>
+    <!-- Add Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 </body>
 </html>
