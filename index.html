@@ -171,6 +171,34 @@
                 font-size: 0.65rem;
             }
         }
+        
+        .player-selector {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .player-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background-color: #f8a5c2;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            cursor: pointer;
+            border: none;
+        }
+        
+        .player-count {
+            font-weight: bold;
+            min-width: 30px;
+            text-align: center;
+        }
     </style>
 </head>
 <body class="bg-primary-light text-primary-dark">
@@ -384,6 +412,7 @@
                     <input type="hidden" name="السعر" id="hidden-price">
                     <input type="hidden" id="hidden-date-iso">
                     <input type="hidden" id="hidden-time-slot-id">
+                    <input type="hidden" id="hidden-player-count" name="عدد_اللاعبات" value="1">
                     
                     <div>
                         <label for="full-name" class="block text-lg font-medium mb-2">الاسم الكامل</label>
@@ -405,6 +434,17 @@
                         <textarea id="notes" name="ملاحظات" rows="3" class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary-pink focus:border-transparent"></textarea>
                     </div>
                     
+                    <!-- Player Count Selector -->
+                    <div>
+                        <label class="block text-lg font-medium mb-2">عدد اللاعبات</label>
+                        <div class="player-selector">
+                            <button type="button" class="player-btn decrement">-</button>
+                            <span id="player-count" class="player-count">1</span>
+                            <button type="button" class="player-btn increment">+</button>
+                        </div>
+                        <p class="text-sm text-gray-600 mt-1">اختر عدد اللاعبات اللاتي ستشاركن في هذا الحجز</p>
+                    </div>
+                    
                     <div class="bg-gray-100 p-4 rounded-lg">
                         <h3 class="text-xl font-semibold mb-4">طريقة الدفع</h3>
                         <p class="mb-4">الدفع عن طريق STC Pay فقط:</p>
@@ -417,6 +457,7 @@
                                 <p class="font-medium">STC Pay</p>
                                 <p class="text-gray-600">رقم الجوال: <span class="font-bold">0582068727</span></p>
                                 <p class="text-gray-600">المبلغ: <span class="font-bold" id="booking-price">75 ريال</span></p>
+                                <p class="text-gray-600 text-sm">(للاعبة واحدة)</p>
                             </div>
                         </div>
                         
@@ -585,7 +626,9 @@ Ladies, it's time!</p>
         let selectedSport = '';
         let selectedDate = null;
         let selectedTimeSlotId = '';
+        let selectedPlayerCount = 1;
         let availabilityRefs = {};
+        let currentSlot = null;
 
         // Mobile menu toggle
         document.getElementById('mobile-menu-button').addEventListener('click', function() {
@@ -753,6 +796,24 @@ Ladies, it's time!</p>
                     const slotRef = db.ref(`availability/${selectedCity}/${selectedSport}/${isoDate}/${slot.id}`);
                     availabilityRefs[slot.id] = slotRef;
                     
+                    // Create slot element immediately
+                    const slotElement = document.createElement('div');
+                    slotElement.id = `slot-${slot.id}`;
+                    slotElement.className = 'bg-white rounded-lg p-4 border border-gray-200';
+                    slotElement.innerHTML = `
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="font-bold">${slot.time}</span>
+                            <span class="text-sm text-gray-500">
+                                <i class="fas fa-spinner fa-spin"></i> جاري التحميل...
+                            </span>
+                        </div>
+                        <div class="text-sm text-gray-600 mb-2">السعر: ${slot.price} ريال</div>
+                        <button class="w-full mt-2 py-2 rounded-lg bg-gray-200 cursor-not-allowed transition" disabled>
+                            جاري التحميل...
+                        </button>
+                    `;
+                    timeSlots.appendChild(slotElement);
+                    
                     // Listen for real-time updates
                     slotRef.on('value', (snapshot) => {
                         updateTimeSlotDisplay(slot, snapshot.val());
@@ -773,14 +834,9 @@ Ladies, it's time!</p>
             const isFull = available === 0;
             const isAlmostFull = available <= 2 && available > 0;
             
-            // Find existing slot element or create a new one
-            let slotElement = document.getElementById(`slot-${slot.id}`);
-            if (!slotElement) {
-                slotElement = document.createElement('div');
-                slotElement.id = `slot-${slot.id}`;
-                slotElement.className = 'bg-white rounded-lg p-4 border border-gray-200';
-                document.getElementById('time-slots').appendChild(slotElement);
-            }
+            // Find slot element
+            const slotElement = document.getElementById(`slot-${slot.id}`);
+            if (!slotElement) return;
             
             slotElement.innerHTML = `
                 <div class="flex justify-between items-center mb-2">
@@ -805,10 +861,48 @@ Ladies, it's time!</p>
                     document.getElementById('hidden-price').value = `${slot.price} ريال`;
                     document.getElementById('hidden-time-slot-id').value = slot.id;
                     selectedTimeSlotId = slot.id;
+                    currentSlot = slot;
+                    
+                    // Reset player count to 1
+                    selectedPlayerCount = 1;
+                    document.getElementById('player-count').textContent = '1';
+                    document.getElementById('hidden-player-count').value = '1';
+                    
                     document.getElementById('booking').scrollIntoView({ behavior: 'smooth' });
                 });
             }
         }
+
+        // Player count selector
+        document.querySelector('.increment').addEventListener('click', function() {
+            if (!currentSlot) return;
+            
+            const maxAvailable = getAvailableSpaces(selectedCity, selectedSport, selectedTimeSlotId);
+            
+            if (selectedPlayerCount < maxAvailable) {
+                selectedPlayerCount++;
+                document.getElementById('player-count').textContent = selectedPlayerCount;
+                document.getElementById('hidden-player-count').value = selectedPlayerCount;
+                
+                // Update price display
+                const pricePerPlayer = currentSlot.price;
+                const totalPrice = pricePerPlayer * selectedPlayerCount;
+                document.getElementById('booking-price').textContent = `${totalPrice} ريال`;
+            }
+        });
+        
+        document.querySelector('.decrement').addEventListener('click', function() {
+            if (selectedPlayerCount > 1) {
+                selectedPlayerCount--;
+                document.getElementById('player-count').textContent = selectedPlayerCount;
+                document.getElementById('hidden-player-count').value = selectedPlayerCount;
+                
+                // Update price display
+                const pricePerPlayer = currentSlot.price;
+                const totalPrice = pricePerPlayer * selectedPlayerCount;
+                document.getElementById('booking-price').textContent = `${totalPrice} ريال`;
+            }
+        });
 
         // ========== DUAL SUBMISSION HANDLER WITH AVAILABILITY UPDATE ==========
         document.getElementById('booking-form').addEventListener('submit', async function(e) {
@@ -832,7 +926,8 @@ Ladies, it's time!</p>
                 email: document.getElementById('email').value,
                 notes: document.getElementById('notes').value,
                 isoDate: document.getElementById('hidden-date-iso').value,
-                timeSlotId: document.getElementById('hidden-time-slot-id').value
+                timeSlotId: document.getElementById('hidden-time-slot-id').value,
+                playerCount: parseInt(document.getElementById('hidden-player-count').value)
             };
 
             // Validate required fields
@@ -844,6 +939,19 @@ Ladies, it's time!</p>
             // Validate time slot selection
             if (!formData.timeSlotId) {
                 alert('يرجى اختيار موعد صالح.');
+                return;
+            }
+            
+            // Validate player count
+            if (formData.playerCount < 1) {
+                alert('يرجى اختيار عدد لاعبات صالح (1 على الأقل)');
+                return;
+            }
+
+            // Check available spaces
+            const availableSpaces = getAvailableSpaces(formData.city, formData.sport, formData.timeSlotId);
+            if (formData.playerCount > availableSpaces) {
+                alert(`عذراً، لا توجد أماكن كافية. الأماكن المتاحة: ${availableSpaces}`);
                 return;
             }
 
@@ -861,20 +969,20 @@ Ladies, it's time!</p>
                     if (currentData === null) {
                         // Initialize if it doesn't exist
                         return { 
-                            booked: 1,
+                            booked: formData.playerCount,
                             max: getMaxCapacity(formData.city, formData.sport, formData.timeSlotId) 
                         };
                     }
                     
-                    // Check if slot is full
-                    if (currentData.booked >= currentData.max) {
-                        throw new Error('هذا الموعد لم يعد متاحاً. يرجى اختيار موعد آخر.');
+                    // Check if slot has enough space
+                    if (currentData.booked + formData.playerCount > currentData.max) {
+                        throw new Error('لا توجد أماكن كافية لهذا العدد من اللاعبات. يرجى اختيار عدد أقل.');
                     }
                     
                     // Increment booked count
                     return {
                         ...currentData,
-                        booked: currentData.booked + 1
+                        booked: currentData.booked + formData.playerCount
                     };
                 });
                 
@@ -885,6 +993,7 @@ Ladies, it's time!</p>
                     date: formData.date,
                     time: formData.time,
                     price: formData.price,
+                    playerCount: formData.playerCount,
                     fullName: formData.fullName,
                     phone: formData.phone,
                     email: formData.email,
@@ -915,7 +1024,7 @@ Ladies, it's time!</p>
 
                 // Show success message
                 document.getElementById('success-message').textContent =
-                    `تم تأكيد حجزك لرياضة ${formData.sport} في ${formData.city} بتاريخ ${formData.date} في ${formData.time}`;
+                    `تم تأكيد حجزك لرياضة ${formData.sport} في ${formData.city} بتاريخ ${formData.date} في ${formData.time} لعدد ${formData.playerCount} لاعبة`;
                 document.getElementById('success-modal').classList.remove('hidden');
                 e.target.reset(); // Clear the form
                 
@@ -935,6 +1044,15 @@ Ladies, it's time!</p>
             
             const slot = sportSchedule.timeSlots.find(s => s.id === timeSlotId);
             return slot ? slot.max : 0;
+        }
+        
+        // Helper function to get available spaces
+        function getAvailableSpaces(city, sport, timeSlotId) {
+            const maxCapacity = getMaxCapacity(city, sport, timeSlotId);
+            
+            // In a real implementation, we would check Firebase for current bookings
+            // For now, we'll return maxCapacity as available since we're just starting
+            return maxCapacity;
         }
 
         // Close modal
