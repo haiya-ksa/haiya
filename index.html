@@ -828,6 +828,7 @@ Ladies, it's time!</p>
         
         // Update time slot display with real-time data
         function updateTimeSlotDisplay(slot, availabilityData) {
+            // Handle initial state when no data exists in Firebase
             const booked = availabilityData ? availabilityData.booked || 0 : 0;
             const max = slot.max;
             const available = max - booked;
@@ -948,13 +949,6 @@ Ladies, it's time!</p>
                 return;
             }
 
-            // Check available spaces
-            const availableSpaces = getAvailableSpaces(formData.city, formData.sport, formData.timeSlotId);
-            if (formData.playerCount > availableSpaces) {
-                alert(`عذراً، لا توجد أماكن كافية. الأماكن المتاحة: ${availableSpaces}`);
-                return;
-            }
-
             // Set loading state
             const submitBtn = document.querySelector('#booking-form button[type="submit"]');
             submitBtn.disabled = true;
@@ -966,8 +960,8 @@ Ladies, it's time!</p>
                 
                 // Use a transaction to safely update the booked count
                 await availabilityRef.transaction((currentData) => {
+                    // If no data exists in Firebase, initialize it
                     if (currentData === null) {
-                        // Initialize if it doesn't exist
                         return { 
                             booked: formData.playerCount,
                             max: getMaxCapacity(formData.city, formData.sport, formData.timeSlotId) 
