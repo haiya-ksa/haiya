@@ -354,7 +354,7 @@ Ladies, it's time!</p>
             const calendarContainer = document.getElementById('calendar-container');
             
             // Create iframe with Google Calendar embed URL
-            const iframeSrc = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(calendarId)}&ctz=Asia%2FRiyadh`;
+            const iframeSrc = `https://calendar.google.com/calendar/embed?src=${encodeURIComponent(calendarId)}&ctz=Asia%2FRiyadh`&mode=WEEK;
             
             calendarContainer.innerHTML = `
                 <iframe 
